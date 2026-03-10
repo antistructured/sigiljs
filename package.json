@@ -1,9 +1,46 @@
 {
   "name": "sigiljs",
-  "version": "1.0.0",
-  "description": "Dependency-free, runtime-native type system for JavaScript",
+  "version": "0.0.1",
+  "description": "Runtime type sigils for JavaScript",
+  "keywords": [
+    "types",
+    "validation",
+    "runtime",
+    "schema",
+    "type-checking",
+    "zero-dependency",
+    "sigil",
+    "bun",
+    "javascript"
+  ],
+  "author": {
+    "name": "Daniel Weipert",
+    "email": "weipertda@gmail.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weipertda/sigiljs"
+  },
+  "sideEffects": false,
   "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "main": "./src/index.js",
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
+    "format": "prettier --write src/",
+    "lint": "eslint src/",
     "test": "bun test"
+  },
+  "engines": {
+    "bun": ">=1",
+    "node": ">=18"
   }
 }

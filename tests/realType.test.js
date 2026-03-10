@@ -1,5 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import { realType } from "../src/realType.js";
+import { realType } from '../src/core/realType.js'
 
 describe("realType", () => {
   test("primitives", () => {
