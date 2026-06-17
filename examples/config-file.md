@@ -1,3 +1,6 @@
+# Configuration File Example
+
+```js
 import { Sigil } from 'sigiljs';
 
 const Config = Sigil`
@@ -8,4 +11,6 @@ const Config = Sigil`
 }
 `
 
+
 Config.assert(JSON.parse(file))
+```
