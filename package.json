@@ -1,5 +1,5 @@
 {
-  "name": "@antistructured/sigiljs",
+  "name": "@weipertda/sigiljs",
   "version": "0.2.0",
   "description": "Runtime-native type sigils for JavaScript",
   "keywords": [
