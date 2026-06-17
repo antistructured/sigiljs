@@ -1,7 +1,7 @@
 {
   "name": "@antistructured/sigiljs",
   "version": "0.1.0",
-  "description": "Runtime type sigils for JavaScript",
+  "description": "Runtime-native type sigils for JavaScript",
   "keywords": [
     "types",
     "validation",
@@ -38,12 +38,16 @@
     "format": "prettier --write src/",
     "lint": "eslint src/",
     "test": "bun test",
-    "release:patch": "npm version patch && git push --follow-tags && npm publish --access public",
-    "release:minor": "npm version minor && git push --follow-tags && npm publish --access public",
-    "release:major": "npm version major && git push --follow-tags && npm publish --access public"
+    "bench": "bun run bench/validate-user.js",
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "engines": {
     "bun": ">=1",
     "node": ">=18"
+  },
+  "devDependencies": {
+    "zod": "^4.4.3"
   }
 }

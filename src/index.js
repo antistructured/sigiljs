@@ -4,3 +4,4 @@ export {
   realType as real,
   realType as Real,
 } from './core/realType.js';
+export { SigilValidationError } from './core/errors.js';

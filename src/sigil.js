@@ -16,6 +16,13 @@ const _sigilCache = new Map();
  *
  * Each unique schema string is parsed, normalized, and compiled exactly once.
  * Subsequent calls with the same schema string return the cached sigil object.
+ *
+ * The returned sigil exposes:
+ *   .check(value)    → boolean
+ *   .assert(value)   → void | throws
+ *   .validator       → compiled validator function (same stable reference always)
+ *   .compile()       → same as .validator (method form, for back-compat)
+ *   .raw / .ast / .normalized / .options
  */
 function createSigil(options, strings, ...values) {
   // Reconstruct raw string from template parts (supports interpolations)
@@ -31,17 +38,20 @@ function createSigil(options, strings, ...values) {
   const ast = parse(raw, options);
   const normalized = partial(normalize(ast));
 
-  // Warm validator cache eagerly (avoids cold-start cost on first .check() call)
-  compile(normalized);
+  // Pre-compile eagerly and capture the function reference.
+  // This warms the cache on creation and ensures sigil.validator always
+  // returns the exact same cached function — no re-compilation ever.
+  const validator = compile(normalized);
 
   const sigil = Object.freeze({
     raw,
     ast,
     normalized,
     options,
+    validator,
     check: (value, opts) => validate(sigil, value, opts),
     assert: (value, opts) => assert(sigil, value, opts),
-    compile: () => compile(normalized),
+    compile: () => validator,
   });
 
   _sigilCache.set(cacheKey, sigil);
@@ -75,3 +85,11 @@ Sigil.named = function (name) {
     return sigil;
   };
 };
+
+/**
+ * Alias for Sigil.named — preferred ergonomic name for defining reusable sigils.
+ *
+ * @param {string} name
+ * @returns {Function} Tagged template function
+ */
+Sigil.define = Sigil.named;
