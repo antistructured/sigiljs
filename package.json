@@ -29,16 +29,17 @@
   },
   "main": "./src/index.js",
   "files": [
-    "src/",
+    "src",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "docs",
+    "examples"
   ],
   "scripts": {
     "format": "prettier --write src/",
     "lint": "eslint src/",
     "test": "bun test",
-    "bench": "bun run bench/validate-user.js",
+    "bench": "bun run bench/validate-user.js"
   },
   "publishConfig": {
     "access": "public"
