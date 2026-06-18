@@ -1,64 +1,51 @@
-# Named Sigils & Composition
+# Named Sigils
 
-As your application grows, you will want to reuse sigil definitions, compose larger schemas from smaller pieces, and support self-referential or circular schemas. SigilJS supports this via **Named Sigils** created with `Sigil.define` (or its alias `Sigil.named`).
+Named sigils let you reuse a runtime contract by name.
 
-## Defining a Reusable Sigil
+```js
+import { Sigil } from '@weipertda/sigiljs';
 
-You register a named sigil globally by passing a unique name to `Sigil.define`:
+const Email = Sigil.define('Email')`string`;
 
-```javascript
-import { Sigil } from "@antistructured/sigiljs";
-
-// Register the "Email" sigil
-const Email = Sigil.define("Email")`string`;
-```
-
-Once defined, you can reference `Email` directly by name inside any other Sigil's template string:
-
-```javascript
 const User = Sigil`
 {
-  name: string
   email: Email
 }
 `;
 
-User.check({
-  name: "Charlie",
-  email: "charlie@example.com"
-}); // true
+User.check({ email: 'dana@example.com' }); // true
+User.check({ email: 123 }); // false
 ```
 
-## Schema Composition
+`Sigil.define(name)` and `Sigil.named(name)` are aliases.
 
-Composition allows you to modularize your schema architecture:
+## Composition
 
-```javascript
-Sigil.define("Address")`
+Named sigils are useful when several contracts share the same piece.
+
+```js
+Sigil.define('Address')`
 {
   street: string
   city: string
 }
 `;
 
-const UserProfile = Sigil`
+const Customer = Sigil`
 {
   name: string
-  billingAddress: Address
-  shippingAddress: Address
+  billing: Address
+  shipping: Address
 }
 `;
 ```
 
-## Self-Referential & Circular Schemas
+## Recursive contracts
 
-Named sigils allow you to define recursive models (like trees, folder hierarchies, or linked lists).
+Names are resolved lazily, so recursive shapes can work.
 
-Because references are resolved lazily at validation/compilation time, you can refer to a named sigil that has not yet been registered or refers to itself.
-
-```javascript
-// A Node has a name, and an optional list of child Nodes
-const Node = Sigil.define("Node")`
+```js
+const Node = Sigil.define('Node')`
 {
   name: string
   children?: Node[]
@@ -66,28 +53,37 @@ const Node = Sigil.define("Node")`
 `;
 
 Node.check({
-  name: "root",
-  children: [
-    { name: "src" },
-    {
-      name: "tests",
-      children: [
-        { name: "validate.test.js" }
-      ]
-    }
-  ]
+  name: 'root',
+  children: [{ name: 'src' }],
 }); // true
 ```
 
-## Registry Lifecycle
+## Collections
 
-Named sigils are stored in a global registry. When testing, you may want to reset the registry to prevent cross-test contamination:
+Use `Sigil.collection()` when you want grouped reusable sigils without adding names to the global registry.
 
-```javascript
-import { registry } from "@antistructured/sigiljs";
+```js
+const Auth = Sigil.collection({
+  Email: Sigil`string`,
+  Password: Sigil`string`,
+  LoginRequest: Sigil`
+  {
+    email: Email
+    password: Password
+  }
+  `,
+});
 
-// Clear all registered named sigils
-registry.clear();
+Auth.LoginRequest.check({
+  email: 'dana@example.com',
+  password: 'secret',
+}); // true
 ```
 
-Duplicate registrations follow a **last-write-wins** approach, meaning redefining a name will overwrite the previous definition.
+Collections are good for feature-local vocabularies and avoiding name collisions.
+
+## Registry behavior
+
+Global named sigils use last-write-wins behavior: redefining the same name replaces the previous contract.
+
+For tests, the internal registry can be cleared by importing `clear` from `src/core/registry.js` inside this repository. That helper is not part of the public package API.

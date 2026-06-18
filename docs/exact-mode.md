@@ -1,47 +1,30 @@
 # Exact Mode
 
-By default, SigilJS allows objects to have extra, undeclared properties. This is called **Normal Mode**. 
+Normal SigilJS object checks allow extra keys.
 
-If you want to strictly reject any undeclared properties, you can use **Exact Mode** via `Sigil.exact`.
+```js
+const User = Sigil`{ name: string }`;
 
-## Normal Mode vs. Exact Mode
-
-### Normal Mode (Default)
-In normal mode, extra keys are ignored and permitted. This is useful when you only care about a subset of the fields in a payload (e.g. from an API response).
-
-```javascript
-import { Sigil } from "@antistructured/sigiljs";
-
-const User = Sigil`
-{
-  name: string
-}
-`;
-
-User.check({ name: "Dana" }); // true
-User.check({ name: "Dana", admin: true }); // true (extra keys are allowed)
+User.check({ name: 'Dana', admin: true }); // true
 ```
 
-### Exact Mode
-In exact mode, any undeclared keys are rejected, causing validation to fail.
+This is useful for API responses where you only care about a few fields.
 
-```javascript
-const StrictUser = Sigil.exact`
-{
-  name: string
-}
-`;
+Use `Sigil.exact` when the object must match the blueprint exactly:
 
-StrictUser.check({ name: "Dana" }); // true
-StrictUser.check({ name: "Dana", admin: true }); // false (extra keys are rejected!)
+```js
+const User = Sigil.exact`{ name: string }`;
+
+User.check({ name: 'Dana' }); // true
+User.check({ name: 'Dana', admin: true }); // false
 ```
 
-## Nested Exact Objects
+## Nested objects
 
-Exactness is applied globally to nested objects defined within a `Sigil.exact` block.
+Exact mode also applies to nested object expressions inside the same sigil.
 
-```javascript
-const StrictOrder = Sigil.exact`
+```js
+const Order = Sigil.exact`
 {
   id: string
   customer: {
@@ -50,33 +33,26 @@ const StrictOrder = Sigil.exact`
 }
 `;
 
-// Fails validation because of the extra "email" key inside the nested customer object
-StrictOrder.check({
-  id: "order_123",
+Order.check({
+  id: 'order_1',
   customer: {
-    name: "Dana",
-    email: "dana@example.com"
-  }
+    name: 'Dana',
+    email: 'dana@example.com',
+  },
 }); // false
 ```
 
-## Validation Errors
+## Diagnostics
 
-When a validation fails in exact mode due to an unexpected property, the assertion error reports exactly which property was unexpected:
+`.assert()` reports the unexpected key:
 
-```javascript
+```js
 try {
-  StrictUser.assert({ name: "Dana", admin: true });
+  User.assert({ name: 'Dana', admin: true });
 } catch (error) {
-  console.log(error.toJSON());
-  /*
-  {
-    code: "SIGIL_VALIDATION_FAILED",
-    message: "Unexpected property \"admin\"",
-    path: ["admin"],
-    expected: "undefined",
-    actual: "boolean"
-  }
-  */
+  console.log(error.path); // ['admin']
+  console.log(error.message); // Unexpected property "admin"
 }
 ```
+
+Use exact mode at strict boundaries: config files, command payloads, generated data, or tests where accidental extra fields should fail fast.

@@ -2,29 +2,34 @@ import { validate } from './validate.js';
 import { SigilValidationError } from './errors.js';
 import { realType } from './realType.js';
 import { resolve } from './registry.js';
+import { getAstRegistry } from './compile.js';
+
+function resolveName(name, registry) {
+  return registry ? registry.get(name) : resolve(name);
+}
 
 /**
  * Validates a value against a schema and throws a structured `SigilValidationError`
- * if validation fails. Returns `true` if validation passes.
+ * if validation fails. Returns the validated value if validation passes.
  *
  * @param {object} astOrSigil - Raw AST, or a Sigil object with `.normalized` / `.ast`
  * @param {*} value           - The value to validate
  * @param {object} [opts]     - Optional hooks / options
- * @returns {true}
+ * @returns {*}
  * @throws {SigilValidationError}
  */
 export function assert(astOrSigil, value, opts) {
   try {
-    if (validate(astOrSigil, value, opts)) return true;
+    if (validate(astOrSigil, value, opts)) return value;
   } catch (e) {
     // validate() may throw when a lazy identifier resolver can't find a named sigil.
     // Re-wrap as a structured SigilValidationError so callers always get a consistent type.
-    throw new SigilValidationError(
-      e.message ?? 'Validation failed',
-      [],
-      'unknown',
-      realType(value, opts),
-    );
+    throw new SigilValidationError({
+      message: e.message ?? 'Validation failed',
+      path: [],
+      expected: 'unknown',
+      actual: realType(value, opts),
+    });
   }
 
   const ast = astOrSigil.normalized ?? astOrSigil.ast ?? astOrSigil;
@@ -34,25 +39,25 @@ export function assert(astOrSigil, value, opts) {
     err = findError(ast, value, opts, []);
   } catch (e) {
     // findError's identifier case may also throw for unresolvable names.
-    throw new SigilValidationError(
-      e.message ?? 'Validation failed',
-      [],
-      'unknown',
-      realType(value, opts),
-    );
+    throw new SigilValidationError({
+      message: e.message ?? 'Validation failed',
+      path: [],
+      expected: 'unknown',
+      actual: realType(value, opts),
+    });
   }
 
   if (err) {
-    throw new SigilValidationError(err.message, err.path, err.expected, err.actual);
+    throw new SigilValidationError(err);
   }
 
   // Generic fallback (should rarely be reached)
-  throw new SigilValidationError(
-    'Validation failed',
-    [],
-    'match',
-    realType(value, opts),
-  );
+  throw new SigilValidationError({
+    message: 'Validation failed',
+    path: [],
+    expected: 'match',
+    actual: realType(value, opts),
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,8 +109,8 @@ function describeType(ast) {
  * @param {object}   ast
  * @param {*}        value
  * @param {object}   opts
- * @param {string[]} path - Accumulated property path (e.g. ["user", "address", "zip"])
- * @returns {{ message: string, path: string[], expected: string, actual: string } | null}
+ * @param {Array<string|number>} path - Accumulated property path (e.g. ["user", "items", 0, "price"])
+ * @returns {{ message: string, path: Array<string|number>, expected: string, actual: string } | null}
  */
 function findError(ast, value, opts, path) {
   if (!ast) return null;
@@ -118,7 +123,12 @@ function findError(ast, value, opts, path) {
 
       if (p === 'never') {
         const actual = realType(value, opts);
-        return { message: `Expected never, got ${actual}`, path, expected: 'never', actual };
+        return {
+          message: `Expected never, got ${actual}`,
+          path,
+          expected: 'never',
+          actual,
+        };
       }
 
       if (
@@ -131,7 +141,12 @@ function findError(ast, value, opts, path) {
       ) {
         const actual = typeof value;
         return actual !== p ?
-            { message: `Expected ${p}, got ${actual}`, path, expected: p, actual }
+            {
+              message: `Expected ${p}, got ${actual}`,
+              path,
+              expected: p,
+              actual,
+            }
           : null;
       }
 
@@ -216,18 +231,25 @@ function findError(ast, value, opts, path) {
 
     // ── Optional ─────────────────────────────────────────────────────────────
     case 'optional': {
-      return value === undefined ? null : findError(ast.inner, value, opts, path);
+      return value === undefined ? null : (
+          findError(ast.inner, value, opts, path)
+        );
     }
 
     // ── Array ─────────────────────────────────────────────────────────────────
     case 'array': {
       if (!Array.isArray(value)) {
         const actual = realType(value, opts);
-        return { message: `Expected array, got ${actual}`, path, expected: 'array', actual };
+        return {
+          message: `Expected array, got ${actual}`,
+          path,
+          expected: 'array',
+          actual,
+        };
       }
       const elemType = describeType(ast.element);
       for (let i = 0; i < value.length; i++) {
-        const err = findError(ast.element, value[i], opts, [...path, String(i)]);
+        const err = findError(ast.element, value[i], opts, [...path, i]);
         if (err) {
           return {
             ...err,
@@ -242,7 +264,12 @@ function findError(ast, value, opts, path) {
     case 'object': {
       if (typeof value !== 'object' || value === null || Array.isArray(value)) {
         const actual = realType(value, opts);
-        return { message: `Expected object, got ${actual}`, path, expected: 'object', actual };
+        return {
+          message: `Expected object, got ${actual}`,
+          path,
+          expected: 'object',
+          actual,
+        };
       }
 
       // Exact mode: report the first unexpected property
@@ -281,9 +308,10 @@ function findError(ast, value, opts, path) {
             const isDirectFailure = err.path.length === path.length + 1;
             return {
               ...err,
-              message: isDirectFailure ?
-                `Expected property "${p.key}" to be ${err.expected}, got ${err.actual}`
-              : err.message,
+              message:
+                isDirectFailure ?
+                  `Expected property "${p.key}" to be ${err.expected}, got ${err.actual}`
+                : err.message,
             };
           }
         }
@@ -295,7 +323,7 @@ function findError(ast, value, opts, path) {
     // ── Identifier (named sigil reference) ───────────────────────────────────
     case 'identifier': {
       const name = ast.name;
-      const sigil = resolve(name);
+      const sigil = resolveName(name, getAstRegistry(ast));
       if (!sigil) {
         // Unknown at error-finding time — mirror the runtime throw as an error object
         return {

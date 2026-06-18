@@ -1,40 +1,93 @@
-# SigilJS Project Roadmap
+# Roadmap
 
-This document outlines the milestones and roadmap towards a stable `v1.0.0` release.
+SigilJS is evolving toward an executable data contract system for JavaScript.
 
----
+The near-term goal is to keep one stable core package while the contract object shape, `describe()` model, and first projection APIs mature.
 
-## v0.0.x: Foundations & Groundwork [Completed]
-*   [x] **Parser Stability**: Robust tokenization and AST parsing for basic types, nested objects, optionals, and arrays.
-*   [x] **Documentation Hub**: Reference manuals for core features.
-*   [x] **Examples & Playground**: CLI utility for testing type expressions.
-*   [x] **Packaging & Project Hygiene**: Clean npm/Bun packages with zero runtime dependencies.
+v1 positioning:
 
----
+```txt
+SigilJS is an executable data contract system for JavaScript.
 
-## v0.1.x: Compiler & Path-Aware Diagnostics [Completed / Current]
-*   [x] **Compiled Validators**: High-performance pipeline compiled to optimized JS closures, bypassing AST lookups on validation paths.
-*   [x] **Exact Object Mode**: Recursive support for strict object schema verification.
-*   [x] **Reusable Named Sigils**: Composable, registered types with support for recursive/circular schemas.
-*   [x] **Stronger Assert Errors**: Fully path-aware diagnostic exceptions (`SigilValidationError`) indicating exact paths (`["user", "age"]`) and types (`expected`/`actual`).
+Define structure once. Project it everywhere.
+```
 
----
+See [v1 Readiness](v1-readiness.md) for the stabilization checklist.
 
-## v0.2.x: Advanced Composition & Registry Tools [Next Focus]
-*   [ ] **Named Sigil Collections**: Grouping/importing collections of custom types to easily share domain vocabularies.
-*   [ ] **Better Composition API**: Fluent operators for extending and modifying existing sigils.
-*   [ ] **Canonical Schema Caching**: Global structural canonicalization cache for deduplicating syntactically identical sigils across different packages.
+## Done
 
----
+- Primitive, literal, union, array, optional, and object type expressions
+- `.check()` boolean validation
+- `.assert()` with path-aware diagnostics
+- `.parse()` / `.safeParse()` boundary enforcement
+- Exact object mode
+- Named sigils for reusable and recursive contracts
+- `Sigil.collection()` for scoped reusable groups
+- Contract-level and field-level transforms
+- Stable `describe()` model for projections
+- JSON Schema projection
+- TypeScript string projection
+- OpenAPI-compatible projection
+- Forms constraint projection
+- HTTP boundary helpers
+- AI structured-output examples
+- Deterministic testing helpers with `mock()` and `cases()`
+- Object contract lifecycle diffs
+- File-based Bun-native CLI commands
+- Compiled validator cache and hot-path fast paths
+- `realType()` runtime type helper
 
-## v0.3.x: CLI Upgrades & Optimization Hot-Paths
-*   [x] **Benchmark Suite**: Establish comparative execution times against Zod and handwritten Javascript.
-*   [ ] **CLI Enhancements**: Enhanced formatting and interactive modes for the playground binary.
-*   [ ] **V8 Optimizer Alignment**: Fine-tune code-generation functions to maximize JIT compiler inline caching.
+## Near term
 
----
+- Polish public docs and examples
+- Keep benchmark coverage current
+- Stabilize the projection contract model across real examples
+- Improve CLI ergonomics without splitting packages yet
+- Add more examples for API boundaries, config validation, and contract lifecycle checks
 
-## v1.0.0: Production-Ready Release
-*   [ ] **Stable Grammar & AST Spec**: Lock the DSL grammar rules against breaking additions.
-*   [ ] **API Freeze**: Lock core exports (`Sigil`, `S`, `T`, `realType`) and instance methods.
-*   [ ] **Extensive Stress-Testing**: End-to-end production verification.
+## Package split policy
+
+Do not prematurely split packages.
+
+SigilJS should remain a single package until the stable public surfaces are mature enough for ecosystem packages to consume without depending on internals.
+
+Recommended split point:
+
+- `describe()` is stable
+- JSON Schema projection is stable
+- TypeScript projection is stable
+- OpenAPI projection is stable
+
+Future package shape:
+
+- `@sigil/core` — runtime contract definition, validation, transforms, and stable `describe()` model
+- `@sigil/json-schema` — JSON Schema projection and schema-specific compatibility behavior
+- `@sigil/ts` — TypeScript declaration/file generation without a runtime TypeScript dependency
+- `@sigil/openapi` — OpenAPI operation/schema helpers and HTTP documentation utilities
+- `@sigil/forms` — form metadata and UI/framework adapter constraints
+- `@sigil/ai` — LLM structured-output, tool-call, and repair-flow helpers
+- `@sigil/http` — HTTP request/response boundary helpers and framework adapters
+- `@sigil/testing` — fixture generation, cases, fuzzing, and test-runner integrations
+- `@sigil/cli` — command distribution once CLI behavior is stable
+
+Each package needs a clear reason to exist. No package should exist just for aesthetics.
+
+See [Package Split Policy](package-split.md).
+
+## Possible later work
+
+- Nested contract diffs and compatibility scoring
+- Fuzzing with deterministic seeds
+- More collection ergonomics
+- Safer public registry tooling
+- Common format helpers such as uuid/email/url as opt-in contracts
+- More benchmark scenarios against handwritten checks and popular validators
+- Stabilized grammar reference before v1.0
+
+## Non-goals for now
+
+- Premature package splitting
+- A full docs site
+- A full REPL or TUI
+- A large transformation/refinement framework
+- Replacing TypeScript or Zod in every use case

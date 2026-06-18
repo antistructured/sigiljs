@@ -10,20 +10,35 @@
  *     actual:   "string"                     // type that was received
  *   }
  */
+export function createValidationError(details) {
+  return {
+    code: 'SIGIL_VALIDATION_FAILED',
+    message: details.message,
+    path: details.path || [],
+    expected: details.expected,
+    actual: details.actual,
+  };
+}
+
 export class SigilValidationError extends Error {
   /**
-   * @param {string}   message  - Human-readable description of the failure
-   * @param {string[]} path     - Property path to the failure (e.g. ["user", "age"])
-   * @param {string}   expected - Type that was expected
-   * @param {string}   actual   - Type that was actually received
+   * @param {object|string} details - Validation details, or legacy message
+   * @param {string[]} [path]       - Legacy property path
+   * @param {string}   [expected]   - Legacy expected type
+   * @param {string}   [actual]     - Legacy actual type
    */
-  constructor(message, path, expected, actual) {
-    super(message);
+  constructor(details, path, expected, actual) {
+    const error =
+      typeof details === 'object' ?
+        createValidationError(details)
+      : createValidationError({ message: details, path, expected, actual });
+
+    super(error.message);
     this.name = 'SigilValidationError';
-    this.code = 'SIGIL_VALIDATION_FAILED';
-    this.path = path;
-    this.expected = expected;
-    this.actual = actual;
+    this.code = error.code;
+    this.path = error.path;
+    this.expected = error.expected;
+    this.actual = error.actual;
 
     // Omit the constructor frame from V8/Bun stack traces
     if (Error.captureStackTrace) {

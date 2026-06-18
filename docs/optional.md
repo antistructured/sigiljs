@@ -1,11 +1,9 @@
 # Optional Values
 
-Use ` ? ` to allow ` undefined `.
+Use `?` to allow `undefined`.
 
 ```javascript
-
-Sigil`string?`
-
+Sigil`string?`;
 ```
 
 This means the value can be:
@@ -16,33 +14,28 @@ This means the value can be:
 Example:
 
 ```javascript
+const MaybeName = Sigil`string?`;
 
-const MaybeName = Sigil`string?`
-
-MaybeName.check(undefined)
-
+MaybeName.check(undefined);
 ```
 
 ---
 
 ## Optional Object Properties
 
-Optional object properties use ` ? ` after the property name.
+Optional object properties use `?` after the property name.
 
 ```javascript
-
 const User = Sigil`
 {
   name: string
   age?: number
 }
-`
+`;
 ```
 
 Example:
 
 ```javascript
-
-User.check({ name: "Alex" })
-
+User.check({ name: 'Alex' });
 ```

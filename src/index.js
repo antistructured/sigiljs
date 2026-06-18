@@ -1,4 +1,15 @@
-export { Sigil, Sigil as S, Sigil as T } from './sigil.js';
+export {
+  Sigil,
+  Sigil as S,
+  Sigil as T,
+  sigil,
+  optional,
+  union,
+  oneOf,
+  pipe,
+  trim,
+} from './sigil.js';
+export { httpContract } from './http.js';
 export {
   realType,
   realType as real,

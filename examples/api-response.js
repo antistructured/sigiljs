@@ -1,21 +1,23 @@
-import { Sigil } from '../src/index.js'
+import { Sigil } from '../src/index.js';
 
-const ApiResponse = Sigil`
+const ApiResponse = Sigil.exact`
 {
   user: {
     id: string
     email: string
   }
+  ok: boolean
 }
-`
+`;
 
-async function main() {
-  const response = await fetch("https://example.com/api/user")
-  const data = await response.json()
+const upstreamData = {
+  user: {
+    id: 'user_123',
+    email: 'dana@example.com',
+  },
+  ok: true,
+};
 
-  ApiResponse.assert(data)
+const response = ApiResponse.parse(upstreamData);
 
-  console.log("Valid response")
-}
-
-main()
+console.log('API response trusted:', response.user.id);

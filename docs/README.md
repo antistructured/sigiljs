@@ -1,20 +1,29 @@
-# SigilJS Documentation
+# SigilJS Docs
 
-Welcome to the SigilJS documentation! Here you will find guides and specs covering all the core concepts and APIs of SigilJS.
+Start here if you are new to SigilJS:
 
-## Table of Contents
+1. [Introduction](introduction.md)
+2. [Quickstart](quickstart.md)
+3. [Sigils](sigils.md)
+4. [Exact Mode](exact-mode.md)
+5. [Named Sigils](named-sigils.md)
+6. [realType](realtype.md)
+7. [SigilJS vs Zod](sigil-vs-zod.md)
+8. [Roadmap](roadmap.md)
+9. [v1 Readiness](v1-readiness.md)
+10. [Package Split Policy](package-split.md)
+11. [JSON Schema Projection](projections/json-schema.md)
+12. [OpenAPI Projection](projections/openapi.md)
+13. [Forms Projection](projections/forms.md)
+14. [AI Structured Output Contracts](projections/ai-structured-output.md)
+15. [HTTP Boundary Helpers](projections/http.md)
+16. [Testing Helpers](projections/testing.md)
+17. [Contract Lifecycle](projections/lifecycle.md)
 
-- [Introduction](introduction.md) — Why SigilJS exists and the problems it solves.
-- [Quickstart](quickstart.md) — Get up and running in 60 seconds.
-- [Sigils](sigils.md) — The core concept of sigils and type blueprints.
-- [Object Schemas](objects.md) — Validating object key/value maps and nested objects.
-- [Arrays](arrays.md) — Working with array syntax, array-postfix operators, and nested arrays.
-- [Optional Fields](optional.md) — Handling optional properties and nullable fields.
-- [Exact Mode](exact-mode.md) — Rejecting extra properties on objects.
-- [Named Sigils & Composition](named-sigils.md) — Reusable schemas, composition, and circular references.
-- [Compiled Validators](compiled-validators.md) — The performance model and direct compiled validator reuse.
-- [realType()](realtype.md) — Deep runtime type-detection with support for custom hooks.
-- [CLI Playground](cli.md) — Testing schemas in your terminal.
-- [Examples](examples.md) — Concrete usage examples.
-- [Roadmap](roadmap.md) — Project milestones towards v1.0.0.
-- [Contributing](contributing.md) — Guidelines for contributing to SigilJS.
+Additional references:
+
+- [Core API Audit](core-api-audit.md)
+- [CLI](cli.md)
+- [Compiled Validators](compiled-validators.md)
+- [Examples](examples.md)
+- [Contributing](contributing.md)

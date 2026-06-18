@@ -1,178 +1,63 @@
-import { Sigil } from "../src/index.js";
-import { z } from "zod";
+import { Sigil } from '../src/index.js';
 
-// ── Data ───────────────────────────────────────────────────────────────────
-const validData = {
-  name: "Alice Smith",
-  age: 30,
-  email: "alice@example.com",
-  isAdmin: true,
-  tags: ["engineering", "typescript", "runtime"],
-  profile: {
-    avatar: "https://example.com/avatar.png",
-    theme: "dark"
-  }
-};
-
-const invalidData = {
-  name: "Alice Smith",
-  age: "thirty", // Invalid type
-  email: "alice@example.com",
-  isAdmin: true,
-  tags: ["engineering", "typescript", 42], // Invalid item
-  profile: {
-    avatar: "https://example.com/avatar.png"
-    // Missing theme
-  }
-};
-
-// ── Implementations ────────────────────────────────────────────────────────
-
-// 1. Manual validation (Handwritten JS - maximum theoretically possible speed)
-function validateManual(data) {
-  if (typeof data !== 'object' || data === null) return false;
-  if (typeof data.name !== 'string') return false;
-  if (typeof data.age !== 'number') return false;
-  if (typeof data.email !== 'string') return false;
-  if (typeof data.isAdmin !== 'boolean') return false;
-  if (!Array.isArray(data.tags)) return false;
-  for (let i = 0; i < data.tags.length; i++) {
-    if (typeof data.tags[i] !== 'string') return false;
-  }
-  if (typeof data.profile !== 'object' || data.profile === null) return false;
-  if (typeof data.profile.avatar !== 'string') return false;
-  if (typeof data.profile.theme !== 'string') return false;
-  return true;
-}
-
-// 2. SigilJS (Normal Mode)
-const SigilUser = Sigil`
+const User = Sigil`
 {
   name: string
-  age: number
+  age?: number
   email: string
-  isAdmin: boolean
-  tags: string[]
-  profile: {
-    avatar: string
-    theme: string
-  }
+  active: boolean
 }
 `;
 
-// Pre-compiled validator function (bypasses Sigil instance overhead)
-const sigilCompiledValidator = SigilUser.validator;
+const validUser = {
+  name: 'Alice',
+  age: 30,
+  email: 'alice@example.com',
+  active: true,
+};
 
-// 3. Zod
-const ZodUser = z.object({
-  name: z.string(),
-  age: z.number(),
-  email: z.string(),
-  isAdmin: z.boolean(),
-  tags: z.array(z.string()),
-  profile: z.object({
-    avatar: z.string(),
-    theme: z.string()
-  })
-});
+const invalidUser = {
+  name: 'Alice',
+  age: 'thirty',
+  email: 'alice@example.com',
+  active: true,
+};
 
-// ── Benchmark Runner ───────────────────────────────────────────────────────
+function validateManual(user) {
+  return (
+    user !== null &&
+    typeof user === 'object' &&
+    typeof user.name === 'string' &&
+    (user.age === undefined || typeof user.age === 'number') &&
+    typeof user.email === 'string' &&
+    typeof user.active === 'boolean'
+  );
+}
 
-function runSuite(name, data) {
-  console.log(`\n======================================================`);
-  console.log(`Benchmark: ${name}`);
-  console.log(`======================================================`);
+function bench(name, fn, iterations = 100_000) {
+  const start = performance.now();
+  for (let i = 0; i < iterations; i++) {
+    fn();
+  }
+  const end = performance.now();
+  console.log(`${name}: ${(end - start).toFixed(2)}ms`);
+}
+
+function runSuite(title, data) {
+  console.log(`\nBenchmark: ${title}`);
+  console.log('='.repeat(title.length + 12));
 
   const suites = [
-    {
-      name: "Manual JS (Baseline)",
-      fn: () => validateManual(data)
-    },
-    {
-      name: "SigilJS (.validator compiled fn)",
-      fn: () => sigilCompiledValidator(data)
-    },
-    {
-      name: "SigilJS (User.check)",
-      fn: () => SigilUser.check(data)
-    },
-    {
-      name: "Zod (safeParse)",
-      fn: () => ZodUser.safeParse(data).success
-    }
+    { name: 'Manual JS', fn: () => validateManual(data) },
+    { name: 'Sigil (.validator)', fn: () => User.validator(data) },
+    { name: 'Sigil (.check)', fn: () => User.check(data) },
   ];
 
-  // Warmup all candidates
   for (const suite of suites) {
-    for (let i = 0; i < 50000; i++) {
-      suite.fn();
-    }
-  }
-
-  const results = [];
-
-  for (const suite of suites) {
-    const durationMs = 1000;
-    const start = performance.now();
-    let ops = 0;
-    let end = start;
-
-    while (end - start < durationMs) {
-      // Unroll loop slightly for lower loop overhead
-      suite.fn();
-      suite.fn();
-      suite.fn();
-      suite.fn();
-      suite.fn();
-      suite.fn();
-      suite.fn();
-      suite.fn();
-      suite.fn();
-      suite.fn();
-      ops += 10;
-      end = performance.now();
-    }
-
-    const totalTimeMs = end - start;
-    const opsPerSec = (ops / totalTimeMs) * 1000;
-    results.push({
-      name: suite.name,
-      opsPerSec,
-      avgMs: totalTimeMs / ops
-    });
-  }
-
-  // Sort by performance (highest ops/sec first)
-  results.sort((a, b) => b.opsPerSec - a.opsPerSec);
-
-  const baselineOps = results.find(r => r.name.includes("Manual JS")).opsPerSec;
-
-  console.log(
-    String("Candidate").padEnd(32) +
-    " | " +
-    String("Ops/sec").padStart(15) +
-    " | " +
-    String("Avg (ns)").padStart(12) +
-    " | " +
-    String("vs Manual").padStart(12)
-  );
-  console.log("-".repeat(78));
-
-  for (const res of results) {
-    const vsManual = (res.opsPerSec / baselineOps) * 100;
-    const avgNs = res.avgMs * 1e6; // to nanoseconds
-    console.log(
-      res.name.padEnd(32) +
-      " | " +
-      Math.round(res.opsPerSec).toLocaleString().padStart(15) +
-      " | " +
-      avgNs.toFixed(1).padStart(12) +
-      " | " +
-      `${vsManual.toFixed(1)}%`.padStart(12)
-    );
+    bench(suite.name, suite.fn);
   }
 }
 
-// Run benchmarks
-runSuite("Valid Data Input", validData);
-runSuite("Invalid Data Input", invalidData);
+console.log('Early benchmark (local, not scientific)');
+runSuite('Valid user', validUser);
+runSuite('Invalid user', invalidUser);

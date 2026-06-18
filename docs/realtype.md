@@ -1,36 +1,45 @@
 # realType
 
-SigilJS includes ` realType() `, which improves on JavaScript's ` typeof `.
+`realType()` returns a clearer runtime type name than JavaScript's `typeof`.
 
-```javascript
+```js
+import { realType } from '@weipertda/sigiljs';
 
-import { realType } from "sigiljs"
-
-realType([])         // "array"
-realType(null)       // "null"
-realType(new Map())  // "map"
-realType(new Date()) // "date"
-
+realType('hello'); // string
+realType(42); // number
+realType(Number.NaN); // nan
+realType(null); // null
+realType([]); // array
+realType(new Date()); // date
+realType(new Map()); // map
+realType(async () => {}); // asyncfunction
 ```
 
-This is especially useful when building validation or debugging tools.
+It is used internally by SigilJS diagnostics and is also exported for debugging or custom validation tools.
 
-## Custom Type Hooks
+## Why not `typeof`?
 
-You can supply custom override hooks to map instances of custom classes or objects back to nominal type strings. Hooks are checked before standard type resolution:
+```js
+typeof null; // object
+typeof []; // object
+```
 
-```javascript
-import { realType } from "@antistructured/sigiljs";
+`realType()` reports those values as `null` and `array`.
 
-class MyCustomConnection {}
+## Custom hooks
 
-const conn = new MyCustomConnection();
+Hooks let you name application-specific values before normal detection runs.
 
-const typeName = realType(conn, {
+```js
+class DatabaseConnection {}
+
+const conn = new DatabaseConnection();
+
+realType(conn, {
   hooks: [
-    val => val instanceof MyCustomConnection ? 'connection' : null
-  ]
-});
-
-console.log(typeName); // "connection"
+    (value) => (value instanceof DatabaseConnection ? 'db_connection' : null),
+  ],
+}); // db_connection
 ```
+
+A hook should return a string when it recognizes a value, or `null` when it does not.

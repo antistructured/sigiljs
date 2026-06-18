@@ -1,94 +1,195 @@
 # Sigils
 
-A **sigil** is a small expression that describes what data should look like.
+A **sigil** is a runtime contract written as a compact type expression.
 
-Sigils are written using a tagged template:
-
-```javascript
-
-Sigil`string`
-
+```js
+const StringValue = Sigil`string`;
+const StringOrNumber = Sigil`string | number`;
+const StringList = Sigil`string[]`;
 ```
 
-Sigils compile into fast runtime validators.
+Sigils are created with a JavaScript tagged template. They parse once, compile once, and expose stable validation methods.
 
----
+## Core API
 
-## Primitive Types
+```js
+const User = Sigil`{ name: string }`;
 
-SigilJS supports common JavaScript primitives.
-
-```javascript
-
-Sigil`string`
-Sigil`number`
-Sigil`boolean`
-Sigil`bigint`
-Sigil`symbol`
-Sigil`null`
-Sigil`undefined`
-
+User.check({ name: 'Ada' }); // true
+User.assert({ name: 'Ada' }); // returns the value
+User.validator({ name: 'Ada' }); // true, direct compiled function
+User.compile() === User.validator; // true
 ```
 
-Example:
+`S` and `T` are aliases for `Sigil`:
 
-```javascript
+```js
+import { Sigil, S, T } from '@weipertda/sigiljs';
 
-const Name = Sigil`string`
-
-Name.check("Alex")
-
+Sigil`string`;
+S`string`;
+T`string`;
 ```
 
----
+## Plain JavaScript object definitions
 
-## The Sigil Mental Model
+You can also define contracts with JavaScript objects:
 
-The easiest way to think about SigilJS is:
+```js
+import { sigil, optional, union, oneOf, pipe, trim } from '@weipertda/sigiljs';
 
-A **sigil is a blueprint for data**.
+const User = sigil({
+  id: union(String, Number),
+  name: String,
+  age: optional(Number),
+  role: oneOf('admin', 'user'),
+});
 
-Example blueprint:
+User.check({ id: 1, name: 'Ada', role: 'admin' }); // true
+```
 
-```javascript
+Object definitions produce the same contract object shape as template sigils. They are another Define-pillar front door into the same runtime contract engine.
 
+Native constructor mappings:
+
+```txt
+String  → string
+Number  → number
+Boolean → boolean
+BigInt  → bigint
+Symbol  → symbol
+Array   → array
+Object  → object
+```
+
+Use `sigil.exact({ ... })` when extra object keys should be rejected.
+
+## Transforms
+
+Transforms normalize valid input into a trusted shape during `parse()`.
+
+```js
+const User = sigil({
+  id: Number,
+  name: pipe(String, trim()),
+}).transform((user) => ({
+  ...user,
+  name: user.name.toUpperCase(),
+}));
+
+User.parse({ id: 1, name: '  dana  ' });
+// { id: 1, name: 'DANA' }
+```
+
+Transform safety is conservative: SigilJS validates input, applies transforms, then validates the transformed output again.
+
+Use `serialize(value)` to validate trusted data before sending it back across a boundary.
+
+## Contract descriptions
+
+`describe()` returns the stable public contract model used by future projections.
+
+```js
+sigil({ id: Number }).describe();
+// {
+//   kind: 'object',
+//   exact: false,
+//   properties: [
+//     { key: 'id', required: true, contract: { kind: 'number' } }
+//   ]
+// }
+```
+
+Future projections such as TypeScript and OpenAPI should build from this canonical model instead of parser internals. JSON Schema projection is available now:
+
+```js
+sigil.exact({ id: Number }).toJSONSchema();
+// {
+//   type: 'object',
+//   properties: { id: { type: 'number' } },
+//   required: ['id'],
+//   additionalProperties: false
+// }
+```
+
+## Primitive types
+
+SigilJS supports common runtime types:
+
+```js
+Sigil`string`;
+Sigil`number`; // rejects NaN
+Sigil`boolean`;
+Sigil`bigint`;
+Sigil`symbol`;
+Sigil`undefined`;
+Sigil`null`;
+Sigil`array`;
+Sigil`object`;
+Sigil`function`;
+Sigil`any`;
+Sigil`unknown`;
+Sigil`never`;
+```
+
+## Literals
+
+```js
+const Status = Sigil`"draft" | "published" | "archived"`;
+
+Status.check('draft'); // true
+Status.check('deleted'); // false
+```
+
+String, number, boolean, and `null` literals are supported.
+
+## Unions
+
+Use `|` for alternatives:
+
+```js
+const ID = Sigil`string | number`;
+
+ID.check('user_123'); // true
+ID.check(123); // true
+ID.check(false); // false
+```
+
+## Arrays
+
+Use `[]` after any type expression:
+
+```js
+Sigil`string[]`;
+Sigil`(string | number)[]`;
+Sigil`{ id: string }[]`;
+```
+
+## Objects
+
+```js
 const User = Sigil`
 {
+  id: string
   name: string
   age?: number
 }
-`
-
+`;
 ```
 
-You can then **cast the sigil** against real values.
+Object properties can be separated by newlines or commas. Extra properties are allowed by default. Use [Exact Mode](exact-mode.md) when you want to reject extra keys.
 
-```javascript
+## Blueprint for data
 
-User.check(data)
+A sigil is easiest to read as a blueprint for data:
 
+```js
+const LoginRequest = Sigil`
+{
+  email: string
+  password: string
+}
+`;
 ```
 
----
-
-## API Aliases: `Sigil`, `S`, and `T`
-
-To accommodate different developer preferences, SigilJS exports three aliases for the template tag:
-
-1. **`Sigil` (Recommended for clarity)**: The standard and most descriptive import. Perfect for public APIs, shared utilities, or when team readability is the priority.
-   ```javascript
-   import { Sigil } from "@antistructured/sigiljs";
-   const User = Sigil`{ name: string }`;
-   ```
-
-2. **`S` (Recommended shorthand)**: A single-letter shorthand that feels like standard types or schemas. Great for reducing boilerplate in inline declarations.
-   ```javascript
-   import { S } from "@antistructured/sigiljs";
-   const User = S`{ name: string }`;
-   ```
-
-3. **`T` (Legacy/Optional)**: Kept strictly for backwards compatibility with earlier versions. We recommend using `Sigil` or `S` in new codebases.
-   ```javascript
-   import { T } from "@antistructured/sigiljs";
-   const User = T`{ name: string }`;
-   ```
+That blueprint can be reused anywhere your program accepts unknown input.

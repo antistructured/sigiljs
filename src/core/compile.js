@@ -1,9 +1,34 @@
 import { realType } from '../core/realType.js';
-import {
-  canonicalize,
-  validatorCache,
-} from './cache.js';
+import { canonicalize, validatorCache } from './cache.js';
 import { resolve } from './registry.js';
+
+export function getAstRegistry(ast) {
+  return ast?.__registry;
+}
+
+function resolveName(name, registry) {
+  return registry ? registry.get(name) : resolve(name);
+}
+
+const FAST_PRIMITIVES = new Set([
+  'string',
+  'number',
+  'boolean',
+  'symbol',
+  'bigint',
+  'undefined',
+  'null',
+  'array',
+  'object',
+  'function',
+]);
+
+function canUsePrimitiveFastUnion(names) {
+  for (let i = 0; i < names.length; i++) {
+    if (!FAST_PRIMITIVES.has(names[i])) return false;
+  }
+  return true;
+}
 
 /**
  * Compiles a normalized+partially-evaluated SigilJS AST into a fast validator function.
@@ -17,7 +42,11 @@ import { resolve } from './registry.js';
 export function compile(ast) {
   if (!ast) return () => true;
 
-  const key = canonicalize(ast);
+  const registry = getAstRegistry(ast);
+  const key =
+    registry ?
+      `${registry.__sigilRegistryId}:${canonicalize(ast)}`
+    : canonicalize(ast);
   const cached = validatorCache.get(key);
   if (cached !== undefined) return cached;
 
@@ -38,16 +67,29 @@ function build(ast, visited = new Set()) {
       const p = ast.name;
       if (p === 'any' || p === 'unknown') return () => true;
       if (p === 'never') return () => false;
-      // typeof-based fast-path for JS primitives (no realType overhead)
-      if (
-        p === 'string' ||
-        p === 'number' ||
-        p === 'boolean' ||
-        p === 'symbol' ||
-        p === 'bigint' ||
-        p === 'undefined'
-      ) {
-        return (v) => typeof v === p;
+
+      switch (p) {
+        case 'string':
+          return (v) => typeof v === 'string';
+        case 'number':
+          return (v) => typeof v === 'number' && !Number.isNaN(v);
+        case 'boolean':
+          return (v) => typeof v === 'boolean';
+        case 'symbol':
+          return (v) => typeof v === 'symbol';
+        case 'bigint':
+          return (v) => typeof v === 'bigint';
+        case 'undefined':
+          return (v) => v === undefined;
+        case 'null':
+          return (v) => v === null;
+        case 'array':
+          return Array.isArray;
+        case 'object':
+          return (v) =>
+            typeof v === 'object' && v !== null && !Array.isArray(v);
+        case 'function':
+          return (v) => typeof v === 'function';
       }
       return (v, opts) => realType(v, opts) === p;
     }
@@ -58,10 +100,33 @@ function build(ast, visited = new Set()) {
     }
 
     case 'literal_union': {
-      // Fast-path: Set membership for 5+ literals, Array.includes for fewer
-      if (ast.values.length < 5) {
-        const arr = ast.values;
-        return (v) => arr.includes(v);
+      // Fast-path: direct comparisons for small unions, Set membership for larger unions.
+      const values = ast.values;
+      switch (values.length) {
+        case 0:
+          return () => false;
+        case 1: {
+          const a = values[0];
+          return (v) => v === a;
+        }
+        case 2: {
+          const a = values[0];
+          const b = values[1];
+          return (v) => v === a || v === b;
+        }
+        case 3: {
+          const a = values[0];
+          const b = values[1];
+          const c = values[2];
+          return (v) => v === a || v === b || v === c;
+        }
+        case 4: {
+          const a = values[0];
+          const b = values[1];
+          const c = values[2];
+          const d = values[3];
+          return (v) => v === a || v === b || v === c || v === d;
+        }
       }
       const set = new Set(ast.values);
       return (v) => set.has(v);
@@ -69,19 +134,46 @@ function build(ast, visited = new Set()) {
 
     case 'primitive_union': {
       const names = ast.names;
-      // If all names are typeof-checkable, skip realType entirely
-      const allSimple = names.every(
-        (n) =>
-          n === 'string' ||
-          n === 'number' ||
-          n === 'boolean' ||
-          n === 'symbol' ||
-          n === 'bigint' ||
-          n === 'undefined',
-      );
-      return allSimple ?
-          (v) => names.includes(typeof v)
-        : (v, opts) => names.includes(realType(v, opts));
+      if (canUsePrimitiveFastUnion(names)) {
+        const checks = names.map((name) => build({ kind: 'primitive', name }));
+        const len = checks.length;
+        switch (len) {
+          case 0:
+            return () => false;
+          case 1: {
+            const a = checks[0];
+            return (v) => a(v);
+          }
+          case 2: {
+            const a = checks[0];
+            const b = checks[1];
+            return (v) => a(v) || b(v);
+          }
+          case 3: {
+            const a = checks[0];
+            const b = checks[1];
+            const c = checks[2];
+            return (v) => a(v) || b(v) || c(v);
+          }
+          case 4: {
+            const a = checks[0];
+            const b = checks[1];
+            const c = checks[2];
+            const d = checks[3];
+            return (v) => a(v) || b(v) || c(v) || d(v);
+          }
+          default:
+            return (v) => {
+              for (let i = 0; i < len; i++) {
+                if (checks[i](v)) return true;
+              }
+              return false;
+            };
+        }
+      }
+
+      const set = new Set(names);
+      return (v, opts) => set.has(realType(v, opts));
     }
 
     case 'union': {
@@ -115,28 +207,48 @@ function build(ast, visited = new Set()) {
       // Use pre-computed hint arrays from partial evaluation to avoid
       // re-filtering on every validator invocation (pure win — zero cost at compile time)
       const { hints, properties } = ast;
-      const req =
-        hints ?
-          hints.requiredKeys.map((k) => ({
-            key: k,
-            check: build(properties.find((p) => p.key === k).value, visited),
-          }))
-        : properties
-            .filter((p) => !p.optional)
-            .map((p) => ({ key: p.key, check: build(p.value, visited) }));
-      const opt =
-        hints ?
-          hints.optionalKeys.map((k) => ({
-            key: k,
-            check: build(properties.find((p) => p.key === k).value, visited),
-          }))
-        : properties
-            .filter((p) => p.optional)
-            .map((p) => ({ key: p.key, check: build(p.value, visited) }));
+      const byKey = new Map();
+      for (let i = 0; i < properties.length; i++) {
+        const p = properties[i];
+        byKey.set(p.key, p);
+      }
+
+      let req;
+      let opt;
+      if (hints) {
+        const requiredKeys = hints.requiredKeys;
+        const optionalKeys = hints.optionalKeys;
+        req = new Array(requiredKeys.length);
+        opt = new Array(optionalKeys.length);
+
+        for (let i = 0; i < requiredKeys.length; i++) {
+          const key = requiredKeys[i];
+          req[i] = { key, check: build(byKey.get(key).value, visited) };
+        }
+
+        for (let i = 0; i < optionalKeys.length; i++) {
+          const key = optionalKeys[i];
+          opt[i] = { key, check: build(byKey.get(key).value, visited) };
+        }
+      } else {
+        req = [];
+        opt = [];
+        for (let i = 0; i < properties.length; i++) {
+          const p = properties[i];
+          const compiled = { key: p.key, check: build(p.value, visited) };
+          if (p.optional) opt.push(compiled);
+          else req.push(compiled);
+        }
+      }
 
       const reqLen = req.length;
       const optLen = opt.length;
-      const allowedKeys = ast.exact ? new Set(properties.map((p) => p.key)) : null;
+      let allowedKeys = null;
+      if (ast.exact) {
+        allowedKeys = new Set();
+        for (let i = 0; i < properties.length; i++)
+          allowedKeys.add(properties[i].key);
+      }
 
       return (v, opts) => {
         if (typeof v !== 'object' || v === null || Array.isArray(v))
@@ -163,13 +275,13 @@ function build(ast, visited = new Set()) {
 
     case 'identifier': {
       const name = ast.name;
-      const sigil = resolve(name);
+      const sigil = resolveName(name, getAstRegistry(ast));
 
       // If the sigil isn't registered yet, or if we are currently visiting it (circularity),
       // we return a lazy wrapper that resolves the sigil at validation time.
       if (!sigil || visited.has(name)) {
         return (val, o) => {
-          const resolved = resolve(name);
+          const resolved = resolveName(name, getAstRegistry(ast));
           if (!resolved) throw new Error(`Unknown sigil reference: ${name}`);
           return resolved.check(val, o);
         };

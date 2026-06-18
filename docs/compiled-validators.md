@@ -9,7 +9,7 @@ When you create a Sigil using the template tag, SigilJS parses the type expressi
 This compiled validator is cached, meaning that repeated validations do not perform any string parsing, AST traversal, or tokenizing.
 
 ```javascript
-import { Sigil } from "@antistructured/sigiljs";
+import { Sigil } from '@weipertda/sigiljs';
 
 const User = Sigil`
 {
@@ -19,7 +19,7 @@ const User = Sigil`
 `;
 
 // Under the hood, this uses the cached, pre-compiled validator function
-User.check({ name: "Alice", age: 30 });
+User.check({ name: 'Alice', age: 30 });
 ```
 
 ## Direct Validator Access
@@ -33,7 +33,7 @@ const User = Sigil`{ name: string }`;
 const validateUser = User.validator;
 
 // Validate directly using the function
-const isValid = validateUser({ name: "Bob" }); // true
+const isValid = validateUser({ name: 'Bob' }); // true
 
 // User.compile() returns the same cached reference
 console.log(User.validator === User.compile()); // true

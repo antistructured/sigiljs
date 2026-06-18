@@ -1,7 +1,7 @@
 {
   "name": "@weipertda/sigiljs",
   "version": "0.2.0",
-  "description": "Runtime-native type sigils for JavaScript",
+  "description": "Executable data contracts for JavaScript",
   "keywords": [
     "types",
     "validation",
@@ -11,7 +11,8 @@
     "zero-dependency",
     "sigil",
     "bun",
-    "javascript"
+    "javascript",
+    "typescript"
   ],
   "repository": {
     "type": "git",
@@ -35,6 +36,9 @@
     "docs",
     "examples"
   ],
+  "bin": {
+    "sigil": "./src/playground.js"
+  },
   "scripts": {
     "format": "prettier --write src/",
     "lint": "eslint src/",

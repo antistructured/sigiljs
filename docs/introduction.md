@@ -1,29 +1,55 @@
 # Introduction
 
-JavaScript programs constantly deal with data.
+SigilJS is a tiny JavaScript library for checking data at runtime.
 
-* API responses.
-* User input.
-* Configuration files.
-* Database records.
-* JSON payloads.
+You write a **sigil** — a readable type expression — and SigilJS turns it into a fast validator function.
 
-And the most common question we need to answer is simple:
+```js
+import { Sigil } from '@weipertda/sigiljs';
 
->"Does this data actually match what I expect?"
+const User = Sigil`
+{
+  name: string
+  age?: number
+}
+`;
 
-JavaScript gives us very few tools to answer that question.
-
-` typeof ` is inconsistent:
-
-```javascript
-
-typeof [] // "object"
-
+User.check({ name: 'Dana' }); // true
+User.check({ name: 'Dana', age: 'old' }); // false
 ```
 
-And TypeScript types disappear completely once the code runs.
+Think of a sigil as a **blueprint for data**. It describes what a value should look like when your program is actually running.
 
-SigilJS solves the runtime side of the problem.
+## Why runtime checks?
 
-Instead of writing complex validation logic, you describe the shape of your data using a **sigil**, then validate values against it.
+JavaScript programs constantly receive unknown data:
+
+- API responses
+- form submissions
+- webhooks
+- config files
+- database rows
+- messages from queues
+
+TypeScript helps while you write code, but its types disappear at runtime. `typeof` also has sharp edges:
+
+```js
+typeof []; // "object"
+typeof null; // "object"
+```
+
+SigilJS gives you a small runtime contract that can sit at the edge of your app.
+
+## What SigilJS is good for
+
+- Validating JSON payloads
+- Checking API boundaries
+- Protecting config loading
+- Documenting expected data shapes inline
+- Reusing small named runtime contracts across a codebase
+
+## What it is not
+
+SigilJS is not a full data modeling framework. It does not aim to replace every feature in large validation libraries. It focuses on readable type expressions, fast checks, and a small API.
+
+Next: [Quickstart](quickstart.md).

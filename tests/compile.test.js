@@ -16,11 +16,25 @@ describe('compiler (low-level pipeline)', () => {
     expect(check(42)).toBe(false);
   });
 
+  it('uses strict primitive semantics for number, null, and array', () => {
+    const NumberCheck = compile(partial(normalize(parse('number'))));
+    const NullCheck = compile(partial(normalize(parse('null'))));
+    const ArrayCheck = compile(partial(normalize(parse('array'))));
+
+    expect(NumberCheck(1)).toBe(true);
+    expect(NumberCheck(Number.NaN)).toBe(false);
+    expect(NullCheck(null)).toBe(true);
+    expect(NullCheck(undefined)).toBe(false);
+    expect(ArrayCheck([])).toBe(true);
+    expect(ArrayCheck({ length: 0 })).toBe(false);
+  });
+
   it('compiles unions', () => {
     const ast = partial(normalize(parse('string | number')));
     const check = compile(ast);
     expect(check('hello')).toBe(true);
     expect(check(42)).toBe(true);
+    expect(check(Number.NaN)).toBe(false);
     expect(check(false)).toBe(false);
   });
 

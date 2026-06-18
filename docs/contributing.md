@@ -7,6 +7,7 @@ First off, thank you for considering contributing to SigilJS.
 SigilJS uses [Bun](https://bun.sh) for package management and testing.
 
 1. Clone the repository:
+
    ```bash
 
    git clone https://github.com/weipertda/sigiljs.git
