@@ -16,7 +16,7 @@ For now, `httpContract()` lives in core as a dependency-free helper while the AP
 ## Framework-neutral contract
 
 ```js
-import { httpContract, sigil } from '@weipertda/sigiljs';
+import { httpContract, sigil } from 'sigil';
 
 const LoginRequest = sigil.exact({
   email: String,

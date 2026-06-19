@@ -92,6 +92,7 @@ v1 requirement:
 - `describe()` remains the stable projection bridge
 - JSON Schema, TypeScript, OpenAPI, and Forms projections do not depend on parser internals
 - future packages consume public descriptions, not private AST shapes
+- transforms appear as stable metadata counts/paths, not function bodies
 
 ## Error model
 
@@ -125,6 +126,24 @@ A v1 contract should expose one coherent executable object for:
 ## Projection model
 
 `describe()` is the bridge between runtime contracts and projection packages.
+
+It is the canonical public representation for:
+
+- primitives
+- literals
+- arrays
+- objects
+- optional fields
+- unions
+- exact mode
+- named sigil references
+- transform metadata
+
+Projection rule:
+
+```txt
+contract → describe() → projection
+```
 
 Current projections:
 

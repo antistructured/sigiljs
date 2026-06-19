@@ -5,15 +5,23 @@ Contracts change over time. `diff()` helps catch API and data-model drift before
 ## Object contract diffs
 
 ```js
-const UserV1 = sigil({
-  id: Number,
-  name: String,
-});
+const UserV1 = sigil(
+  {
+    id: Number,
+    username: String,
+    email: optional(String),
+  },
+  { name: 'User', version: '1.0.0' },
+);
 
-const UserV2 = sigil({
-  id: Number,
-  email: String,
-});
+const UserV2 = sigil.exact(
+  {
+    id: Number,
+    displayName: String,
+    email: String,
+  },
+  { name: 'User', version: '1.1.0' },
+);
 
 UserV2.diff(UserV1);
 ```
@@ -21,64 +29,167 @@ UserV2.diff(UserV1);
 returns:
 
 ```js
-{
-  added: [
-    {
-      key: 'email',
-      field: {
-        key: 'email',
-        required: true,
-        contract: { kind: 'string' },
-      },
-    },
-  ],
-  removed: [
-    {
-      key: 'name',
-      field: {
-        key: 'name',
-        required: true,
-        contract: { kind: 'string' },
-      },
-    },
-  ],
-  changed: [],
-  requiredness: [],
-}
+[
+  {
+    kind: 'property.added',
+    path: ['displayName'],
+    contract: { kind: 'string' },
+    impact: 'non-breaking',
+  },
+  {
+    kind: 'property.required_changed',
+    path: ['email'],
+    from: false,
+    to: true,
+    impact: 'breaking',
+  },
+  {
+    kind: 'property.removed',
+    path: ['username'],
+    contract: { kind: 'string' },
+    impact: 'breaking',
+  },
+  {
+    kind: 'object.exact_changed',
+    path: [],
+    from: false,
+    to: true,
+    impact: 'breaking',
+  },
+  {
+    kind: 'metadata.version_changed',
+    path: ['metadata', 'version'],
+    from: '1.0.0',
+    to: '1.1.0',
+    impact: 'unknown',
+  },
+];
 ```
 
-Initial lifecycle diffs support object contracts only.
+Lifecycle diffs currently support object contracts first.
 
 ## Detected changes
 
 `diff()` currently detects:
 
-- added fields
-- removed fields
-- changed field contracts
-- optional-to-required changes
-- required-to-optional changes
+- property added
+- property removed
+- property type changed
+- property became required
+- property became optional
+- exact-mode changes
+- literal union changes
+- metadata name/version/description/tags changes
+- nested object property changes where both sides are object descriptions
 
-Example requiredness change:
+Each change has:
+
+- `kind`: machine-readable change type
+- `path`: contract path to the change
+- `impact`: `breaking`, `non-breaking`, or `unknown`
+
+## Change kinds
+
+### Added property
 
 ```js
-const V1 = sigil({ name: optional(String) });
-const V2 = sigil({ name: String });
-
-V2.diff(V1).requiredness;
+{
+  kind: 'property.added',
+  path: ['displayName'],
+  contract: { kind: 'string' },
+  impact: 'non-breaking',
+}
 ```
 
-returns:
+### Removed property
 
 ```js
-[
+{
+  kind: 'property.removed',
+  path: ['username'],
+  contract: { kind: 'string' },
+  impact: 'breaking',
+}
+```
+
+### Changed property contract
+
+```js
+{
+  kind: 'property.changed',
+  path: ['age'],
+  from: { kind: 'number' },
+  to: { kind: 'string' },
+  impact: 'breaking',
+}
+```
+
+Literal union changes use the same `property.changed` kind. Their impact is currently `unknown` because expanding or narrowing allowed literals depends on the boundary direction and migration policy.
+
+### Requiredness change
+
+```js
+{
+  kind: 'property.required_changed',
+  path: ['email'],
+  from: false,
+  to: true,
+  impact: 'breaking',
+}
+```
+
+Optional → required is classified as `breaking`; required → optional is classified as `non-breaking`.
+
+### Exact-mode change
+
+```js
+{
+  kind: 'object.exact_changed',
+  path: [],
+  from: false,
+  to: true,
+  impact: 'breaking',
+}
+```
+
+Loose → exact is classified as `breaking`; exact → loose is classified as `non-breaking`.
+
+### Metadata version change
+
+```js
+{
+  kind: 'metadata.version_changed',
+  path: ['metadata', 'version'],
+  from: '1.0.0',
+  to: '1.1.0',
+  impact: 'unknown',
+}
+```
+
+Metadata changes are lifecycle signals. Their migration impact depends on release policy, so they are currently classified as `unknown`.
+
+## Contract versioning
+
+Contract versions are lightweight metadata:
+
+```js
+const UserV1 = sigil(
   {
-    key: 'name',
-    before: 'optional',
-    after: 'required',
+    id: Number,
+    name: String,
   },
-];
+  {
+    name: 'User',
+    version: '1.0.0',
+  },
+);
+
+const UserV2 = UserV1.version('1.1.0');
 ```
+
+The version appears in `describe().metadata.version`, JSON Schema/OpenAPI `x-version`, TypeScript `@version` comments, and `metadata.version_changed` diff entries.
+
+This is not package versioning and it does not introduce a registry. SigilJS does not perform hosted lookup, package-registry publishing, remote sync, semantic-version solving, or migration execution for contract versions.
 
 ## Migration safety
 
@@ -94,14 +205,19 @@ Use contract diffs to catch API and data model drift:
 A recommended release check:
 
 ```js
-const diff = UserV2.diff(UserV1);
+const changes = UserV2.diff(UserV1);
+const breaking = changes.filter((change) => change.impact === 'breaking');
 
-if (diff.removed.length > 0 || diff.changed.length > 0) {
-  throw new Error('Potentially breaking contract change');
+if (breaking.length > 0) {
+  throw new Error(
+    `Potentially breaking contract changes: ${breaking
+      .map((change) => `${change.kind}:${change.path.join('.') || '(root)'}`)
+      .join(', ')}`,
+  );
 }
 ```
 
-Adding an optional field may be safe. Removing a field, changing a field type, or making an optional field required is usually migration-sensitive.
+Adding an optional field may be safe. Removing a field, changing a field type, making an optional field required, or changing loose contracts to exact contracts is usually migration-sensitive.
 
 ## Scope
 
@@ -109,9 +225,9 @@ This is intentionally minimal lifecycle support.
 
 Current limitations:
 
-- object contracts only
-- top-level fields only
-- exact-mode flag changes are not reported yet
-- no semantic version classifier yet
+- object contracts only at the diff root
+- practical nested object property diffs only when both sides are object descriptions
+- no full semantic diff for every possible contract kind
+- no package split yet
 
-Future package work may add nested diffs, compatibility scoring, migration planning, and release-gate helpers.
+Future package work may add compatibility scoring, migration planning, and release-gate helpers.

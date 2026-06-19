@@ -9,7 +9,7 @@ When you create a Sigil using the template tag, SigilJS parses the type expressi
 This compiled validator is cached, meaning that repeated validations do not perform any string parsing, AST traversal, or tokenizing.
 
 ```javascript
-import { Sigil } from '@weipertda/sigiljs';
+import { Sigil } from 'sigil';
 
 const User = Sigil`
 {

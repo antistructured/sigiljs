@@ -36,4 +36,25 @@ describe('Phase 8 OpenAPI projection', () => {
       required: ['id'],
     });
   });
+
+  test('projects contract metadata into OpenAPI-compatible schemas', () => {
+    const User = sigil({ id: Number }).withMetadata({
+      name: 'User',
+      version: '1.2.0',
+      description: 'Trusted user boundary object.',
+      tags: ['api', 'user'],
+    });
+
+    expect(User.toOpenAPI()).toEqual({
+      title: 'User',
+      description: 'Trusted user boundary object.',
+      'x-version': '1.2.0',
+      'x-tags': ['api', 'user'],
+      type: 'object',
+      properties: {
+        id: { type: 'number' },
+      },
+      required: ['id'],
+    });
+  });
 });

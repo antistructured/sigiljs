@@ -1,0 +1,8 @@
+{
+  "id": "user_123",
+  "name": "Dana",
+  "role": "admin",
+  "profile": {
+    "age": 36
+  }
+}

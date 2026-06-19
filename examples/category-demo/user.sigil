@@ -1,0 +1,13 @@
+{
+  id: string
+  name: string
+  email: string
+  role: "admin" | "user"
+  profile: {
+    age: number
+  }
+  lead: {
+    urgency: "low" | "medium" | "high"
+    summary: string
+  }
+}

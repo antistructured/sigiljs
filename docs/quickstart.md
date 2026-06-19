@@ -3,19 +3,21 @@
 ## Install
 
 ```bash
-bun add @weipertda/sigiljs
+bun add sigil
 ```
 
 or:
 
 ```bash
-npm install @weipertda/sigiljs
+npm install sigil
 ```
 
 ## Your first sigil
 
+A sigil is an executable contract object. Start with a tiny contract, then use it to turn unknown data into trusted runtime data at a boundary.
+
 ```js
-import { Sigil } from '@weipertda/sigiljs';
+import { Sigil } from 'sigil';
 
 const Name = Sigil`string`;
 
@@ -40,7 +42,7 @@ const User = Sigil`
 Plain JavaScript syntax:
 
 ```js
-import { sigil, optional } from '@weipertda/sigiljs';
+import { sigil, optional } from 'sigil';
 
 const User = sigil({
   name: String,
@@ -58,13 +60,13 @@ User.check({
 
 ## Boolean checks vs diagnostics
 
-Use `.check(value)` when you only need true or false:
+Use `.check(value)` when you only need true or false on a hot path:
 
 ```js
 User.check(data);
 ```
 
-Use `.assert(value)` when you want useful failure details:
+Use `.assert(value)` when you want useful failure details while enforcing a boundary:
 
 ```js
 try {

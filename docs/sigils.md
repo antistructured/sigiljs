@@ -24,7 +24,7 @@ User.compile() === User.validator; // true
 `S` and `T` are aliases for `Sigil`:
 
 ```js
-import { Sigil, S, T } from '@weipertda/sigiljs';
+import { Sigil, S, T } from 'sigil';
 
 Sigil`string`;
 S`string`;
@@ -36,7 +36,7 @@ T`string`;
 You can also define contracts with JavaScript objects:
 
 ```js
-import { sigil, optional, union, oneOf, pipe, trim } from '@weipertda/sigiljs';
+import { sigil, optional, union, oneOf, pipe, trim } from 'sigil';
 
 const User = sigil({
   id: union(String, Number),
@@ -111,6 +111,64 @@ sigil.exact({ id: Number }).toJSONSchema();
 //   additionalProperties: false
 // }
 ```
+
+## Contract metadata
+
+Use the optional metadata argument when a contract needs a stable name, version, description, or tags for docs, projections, and lifecycle diffs.
+
+```js
+const User = sigil(
+  { id: Number },
+  {
+    name: 'User',
+    version: '1.2.0',
+    description: 'Trusted user boundary object.',
+    tags: ['api', 'user'],
+  },
+);
+
+User.describe().metadata;
+// {
+//   name: 'User',
+//   version: '1.2.0',
+//   description: 'Trusted user boundary object.',
+//   tags: ['api', 'user']
+// }
+```
+
+Existing contracts can also attach metadata fluently:
+
+```js
+const User = sigil({ id: Number }).withMetadata({
+  name: 'User',
+  version: '1.2.0',
+});
+```
+
+When only the contract version changes, `version()` is a shorthand for version metadata:
+
+```js
+const UserV1 = sigil({ id: Number, name: String })
+  .withMetadata({ name: 'User' })
+  .version('1.0.0');
+
+const UserV2 = UserV1.version('1.1.0');
+```
+
+This is contract metadata, not package versioning. SigilJS does not create a hosted registry, package registry, remote sync protocol, or migration engine for contract versions. Version strings appear in `describe()`, JSON Schema/OpenAPI `x-version`, TypeScript doc comments, and `diff()` lifecycle entries.
+
+Template sigils can use `Sigil.meta()`:
+
+```js
+const User = Sigil.meta({ name: 'User', version: '1.2.0' })`
+{
+  id: string
+  name: string
+}
+`;
+```
+
+Metadata is optional and does not change validation behavior. Existing contracts work without it. JSON Schema and OpenAPI projections include `title`, `description`, `x-version`, and `x-tags` where present. TypeScript projection emits a doc comment when description, version, or tags are present. `diff()` reports name, version, description, and tag changes as `metadata.*_changed` lifecycle entries.
 
 ## Primitive types
 

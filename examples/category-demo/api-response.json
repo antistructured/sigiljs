@@ -1,0 +1,13 @@
+{
+  "id": "user_123",
+  "name": "Dana",
+  "email": "dana@example.com",
+  "role": "admin",
+  "profile": {
+    "age": 36
+  },
+  "lead": {
+    "urgency": "high",
+    "summary": "Needs migration help before launch."
+  }
+}

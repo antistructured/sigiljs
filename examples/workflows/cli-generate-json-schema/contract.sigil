@@ -1,0 +1,9 @@
+{
+  eventId: string
+  type: "user.created" | "user.deleted"
+  occurredAt: string
+  payload: {
+    userId: string
+    email?: string
+  }
+}

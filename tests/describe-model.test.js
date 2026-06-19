@@ -1,5 +1,13 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
-import { Sigil, oneOf, optional, sigil, union } from '../src/index.js';
+import {
+  Sigil,
+  oneOf,
+  optional,
+  pipe,
+  sigil,
+  trim,
+  union,
+} from '../src/index.js';
 import { clear } from '../src/core/registry.js';
 
 describe('Phase 5 canonical contract description', () => {
@@ -10,6 +18,12 @@ describe('Phase 5 canonical contract description', () => {
   test('describes primitives', () => {
     expect(Sigil`string`.describe()).toEqual({ kind: 'string' });
     expect(sigil(Number).describe()).toEqual({ kind: 'number' });
+    expect(Sigil`boolean`.describe()).toEqual({ kind: 'boolean' });
+    expect(Sigil`bigint`.describe()).toEqual({ kind: 'bigint' });
+    expect(Sigil`symbol`.describe()).toEqual({ kind: 'symbol' });
+    expect(Sigil`null`.describe()).toEqual({ kind: 'literal', value: null });
+    expect(sigil(Array).describe()).toEqual({ kind: 'array' });
+    expect(sigil(Object).describe()).toEqual({ kind: 'object' });
   });
 
   test('describes arrays', () => {
@@ -107,5 +121,69 @@ describe('Phase 5 canonical contract description', () => {
     expect(first).not.toBe(second);
     first.properties.push({ key: 'mutated', required: true, contract: {} });
     expect(User.describe()).toEqual(second);
+  });
+
+  test('describes optional contract metadata', () => {
+    const User = sigil({ name: String }).withMetadata({
+      name: 'User',
+      version: '1.2.0',
+      description: 'Trusted user boundary object.',
+      tags: ['api', 'user'],
+    });
+
+    expect(User.describe()).toEqual({
+      kind: 'object',
+      exact: false,
+      properties: [
+        { key: 'name', required: true, contract: { kind: 'string' } },
+      ],
+      metadata: {
+        name: 'User',
+        version: '1.2.0',
+        description: 'Trusted user boundary object.',
+        tags: ['api', 'user'],
+      },
+    });
+
+    const first = User.describe();
+    first.metadata.tags.push('mutated');
+    expect(User.describe().metadata.tags).toEqual(['api', 'user']);
+  });
+
+  test('describes transform metadata without exposing transform functions', () => {
+    const User = sigil({
+      name: pipe(String, trim()),
+      nested: {
+        title: pipe(String, trim(), (value) => value.toUpperCase()),
+      },
+    }).transform((user) => ({ ...user, name: user.name.toUpperCase() }));
+
+    expect(User.describe()).toEqual({
+      kind: 'object',
+      exact: false,
+      properties: [
+        { key: 'name', required: true, contract: { kind: 'string' } },
+        {
+          key: 'nested',
+          required: true,
+          contract: {
+            kind: 'object',
+            exact: false,
+            properties: [
+              { key: 'title', required: true, contract: { kind: 'string' } },
+            ],
+          },
+        },
+      ],
+      metadata: {
+        transforms: {
+          contract: 1,
+          fields: [
+            { path: ['name'], count: 1 },
+            { path: ['nested', 'title'], count: 2 },
+          ],
+        },
+      },
+    });
   });
 });

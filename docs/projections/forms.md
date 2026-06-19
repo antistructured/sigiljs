@@ -15,7 +15,7 @@ For now, forms projection lives in core while the projection API stabilizes.
 ## Example
 
 ```js
-import { optional, sigil } from '@weipertda/sigiljs';
+import { optional, sigil } from 'sigil';
 
 const User = sigil({
   name: String,

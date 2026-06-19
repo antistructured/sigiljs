@@ -11,7 +11,7 @@ Sigil contract → describe() → JSON Schema → OpenAPI schema
 For now, `toOpenAPI()` returns an OpenAPI-compatible schema object using `toJSONSchema()` as the base.
 
 ```js
-import { oneOf, sigil } from '@weipertda/sigiljs';
+import { oneOf, sigil } from 'sigil';
 
 const User = sigil.exact({
   id: Number,

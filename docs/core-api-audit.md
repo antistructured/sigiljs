@@ -20,7 +20,7 @@ import {
   httpContract,
   realType,
   SigilValidationError,
-} from '@weipertda/sigiljs';
+} from 'sigil';
 ```
 
 Current export meanings:
@@ -86,6 +86,7 @@ Every Sigil contract should have a stable shape:
   safeParse,
   serialize,
   transform,
+  withMetadata,
   describe,
   toJSONSchema,
   toTypeScript,
@@ -109,6 +110,10 @@ Notes:
 - `parse(value)` is the Enforce-pillar name for `assert(value)` semantics.
 - `safeParse(value)` returns `{ success: true, data }` or `{ success: false, error }` without throwing.
 - `transform(fn)` returns a derived contract that validates input, applies transforms, then revalidates output during `parse()`.
+- `withMetadata(metadata)` returns a derived contract with optional name, version, description, and tags for descriptions and projections.
+- `version(version)` returns a derived contract with updated version metadata only; it does not introduce registry or migration-engine behavior.
+- `sigil(definition, metadata)` and `sigil.exact(definition, metadata)` attach optional metadata at object-definition time.
+- `Sigil.meta(metadata)` attaches optional metadata to template contracts.
 - `serialize(value)` validates trusted data for boundary-safe output. The initial implementation validates and returns the value.
 - `describe()` returns a stable public contract description and must not expose unstable parser internals.
 - `toJSONSchema()` projects the stable contract description into a JSON Schema-like object.
@@ -117,7 +122,7 @@ Notes:
 - `toFormConstraints()` experimentally projects object contracts into basic form metadata.
 - `mock()` generates a deterministic valid sample value for tests and examples.
 - `cases()` returns basic deterministic `{ valid, invalid }` contract test cases.
-- `diff(other)` compares object contracts for lifecycle drift: added, removed, changed, and requiredness changes.
+- `diff(other)` compares object contracts for lifecycle drift: added, removed, changed, requiredness, exact-mode, and metadata changes.
 
 ## Transform behavior
 
@@ -148,7 +153,9 @@ Loose contracts preserve unknown keys. Exact contracts reject unknown keys befor
 
 ## Canonical contract description
 
-`describe()` is the public structural bridge for projection APIs. Projection features such as `toTypeScript`, `toOpenAPI`, `toFormConstraints`, and future package adapters should consume this stable model rather than parser internals. JSON Schema projection is already available with `toJSONSchema()`, OpenAPI projection builds on that with `toOpenAPI()`, and forms projection is available experimentally with `toFormConstraints()`.
+`describe()` is the public structural bridge for projection APIs. Projection features such as `toTypeScript`, `toOpenAPI`, `toFormConstraints`, `mock`, `cases`, `diff`, and future package adapters should consume this stable model rather than parser internals. JSON Schema projection is already available with `toJSONSchema()`, OpenAPI projection builds on that with `toOpenAPI()`, and forms projection is available experimentally with `toFormConstraints()`.
+
+The canonical model covers primitives, literals, arrays, objects, optional fields, unions, exact mode, named sigil references, optional contract metadata, and stable transform metadata when transforms are attached. Contract metadata supports name, version, description, and tags. Transform metadata records counts and field paths only; it never exposes transform function bodies.
 
 Example:
 

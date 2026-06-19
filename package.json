@@ -1,18 +1,23 @@
 {
-  "name": "@weipertda/sigiljs",
-  "version": "0.2.0",
+  "name": "sigil",
+  "version": "0.3.0",
   "description": "Executable data contracts for JavaScript",
   "keywords": [
-    "types",
-    "validation",
-    "runtime",
-    "schema",
-    "type-checking",
-    "zero-dependency",
-    "sigil",
     "bun",
+    "contracts",
+    "data-contracts",
     "javascript",
-    "typescript"
+    "json-schema",
+    "openapi",
+    "runtime",
+    "runtime-contracts",
+    "schema",
+    "sigil",
+    "type-checking",
+    "types",
+    "typescript",
+    "validation",
+    "zero-dependency"
   ],
   "repository": {
     "type": "git",
@@ -20,8 +25,8 @@
   },
   "license": "MIT",
   "author": {
-    "name": "Daniel Weipert",
-    "email": "weipertda@gmail.com"
+    "name": "Antistructured Software",
+    "email": "antistructured@gmail.com"
   },
   "sideEffects": false,
   "type": "module",
@@ -44,9 +49,6 @@
     "lint": "eslint src/",
     "test": "bun test",
     "bench": "bun run bench/validate-user.js"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "engines": {
     "bun": ">=1",

@@ -1,0 +1,13 @@
+{
+  "id": "user_123",
+  "name": "Dana",
+  "email": "dana@example.com",
+  "role": "owner",
+  "profile": {
+    "age": "old"
+  },
+  "lead": {
+    "urgency": "critical",
+    "summary": 42
+  }
+}

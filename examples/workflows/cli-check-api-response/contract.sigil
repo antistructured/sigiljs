@@ -1,0 +1,8 @@
+{
+  id: string
+  name: string
+  role: "admin" | "user"
+  profile: {
+    age: number
+  }
+}

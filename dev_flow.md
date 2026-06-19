@@ -174,7 +174,7 @@ For every task:
 
 ## Existing Project Constraints
 
-- Current package: `@weipertda/sigiljs`
+- Current package: `sigil`
 - Test runner: Bun
 - Runtime target: JavaScript / ESM
 - Existing parser/compiler pipeline must be extended, not replaced:
@@ -227,13 +227,13 @@ These features already exist and must remain working while the project evolves:
 Expected public imports include:
 
 ```js
-import { Sigil, S, realType } from '@weipertda/sigiljs'
+import { Sigil, S, realType } from 'sigil'
 ```
 
 Optional existing alias:
 
 ```js
-import { T } from '@weipertda/sigiljs'
+import { T } from 'sigil'
 ```
 
 ---
@@ -258,13 +258,13 @@ Inspect the current public API and document what exists.
 Expected current exports:
 
 ```js
-import { Sigil, S, realType } from '@weipertda/sigiljs'
+import { Sigil, S, realType } from 'sigil'
 ```
 
 Optional existing alias:
 
 ```js
-import { T } from '@weipertda/sigiljs'
+import { T } from 'sigil'
 ```
 
 ### Acceptance
@@ -372,7 +372,7 @@ const User = sigil({
 Potential export:
 
 ```js
-import { sigil } from '@weipertda/sigiljs'
+import { sigil } from 'sigil'
 ```
 
 ### Design Rule
@@ -433,7 +433,7 @@ const User = sigil({
 Export:
 
 ```js
-import { sigil, optional } from '@weipertda/sigiljs'
+import { sigil, optional } from 'sigil'
 ```
 
 ### Acceptance

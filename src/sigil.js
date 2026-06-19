@@ -26,15 +26,20 @@ function createSigil(options = {}, strings, ...values) {
     registry,
     transforms = [],
     fieldTransforms = [],
+    metadata: contractMetadataInput,
     ...createOptions
   } = options;
+  const contractMetadata = normalizeContractMetadata(contractMetadataInput);
 
   let raw = strings?.[0] ?? '';
   for (let i = 0; i < values.length; i++)
     raw += values[i] + (strings?.[i + 1] ?? '');
 
   const cacheable = transforms.length === 0 && fieldTransforms.length === 0;
-  const cacheKey = cacheKeyFor(createOptions, raw);
+  const cacheKey = cacheKeyFor(
+    { ...createOptions, metadata: contractMetadata },
+    raw,
+  );
   const cached = cacheable ? _sigilCache.get(cacheKey) : undefined;
   if (cached !== undefined) return cached;
 
@@ -70,10 +75,28 @@ function createSigil(options = {}, strings, ...values) {
           ...sigil.options,
           transforms: [...transforms, fn],
           fieldTransforms,
+          metadata: contractMetadata,
         },
         [raw],
       ),
-    describe: () => describeNode(normalized),
+    withMetadata: (metadata) =>
+      createSigil(
+        {
+          ...sigil.options,
+          transforms,
+          fieldTransforms,
+          metadata: mergeContractMetadata(contractMetadata, metadata),
+        },
+        [raw],
+      ),
+    version: (version) => sigil.withMetadata({ version }),
+    describe: () =>
+      describeContract(
+        normalized,
+        transforms,
+        fieldTransforms,
+        contractMetadata,
+      ),
     toJSONSchema: () => toJSONSchema(sigil.describe()),
     toTypeScript: (name) => {
       const described = sigil.describe();
@@ -101,6 +124,12 @@ export function Sigil(strings, ...values) {
 
 Sigil.exact = function (strings, ...values) {
   return createSigil({ exact: true }, strings, ...values);
+};
+
+Sigil.meta = function meta(metadata) {
+  return function (strings, ...values) {
+    return createSigil({ exact: false, metadata }, strings, ...values);
+  };
 };
 
 Sigil.named = function (name) {
@@ -148,16 +177,24 @@ Sigil.collection = function collection(definitions = {}) {
 
 Sigil.define = Sigil.named;
 
-export function sigil(definition) {
+export function sigil(definition, metadata) {
   return createSigil(
-    { exact: false, fieldTransforms: collectFieldTransforms(definition) },
+    {
+      exact: false,
+      fieldTransforms: collectFieldTransforms(definition),
+      metadata,
+    },
     [sourceFromDefinition(definition)],
   );
 }
 
-sigil.exact = function exact(definition) {
+sigil.exact = function exact(definition, metadata) {
   return createSigil(
-    { exact: true, fieldTransforms: collectFieldTransforms(definition) },
+    {
+      exact: true,
+      fieldTransforms: collectFieldTransforms(definition),
+      metadata,
+    },
     [sourceFromDefinition(definition)],
   );
 };
@@ -429,6 +466,65 @@ function safeParse(sigil, value, opts) {
   }
 }
 
+function normalizeContractMetadata(metadata) {
+  if (!metadata || typeof metadata !== 'object') return null;
+
+  const normalized = {};
+  if (typeof metadata.name === 'string') normalized.name = metadata.name;
+  if (typeof metadata.version === 'string')
+    normalized.version = metadata.version;
+  if (typeof metadata.description === 'string') {
+    normalized.description = metadata.description;
+  }
+  if (Array.isArray(metadata.tags)) {
+    const tags = metadata.tags.filter((tag) => typeof tag === 'string');
+    if (tags.length > 0) normalized.tags = tags;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : null;
+}
+
+function mergeContractMetadata(current, next) {
+  return normalizeContractMetadata({ ...(current ?? {}), ...(next ?? {}) });
+}
+
+function cloneContractMetadata(metadata) {
+  if (!metadata) return null;
+  return {
+    ...metadata,
+    ...(metadata.tags ? { tags: [...metadata.tags] } : {}),
+  };
+}
+
+function describeContract(
+  node,
+  transforms = [],
+  fieldTransforms = [],
+  contractMetadata = null,
+) {
+  const description = describeNode(node);
+  const metadata = {
+    ...(cloneContractMetadata(contractMetadata) ?? {}),
+    ...(describeTransformMetadata(transforms, fieldTransforms) ?? {}),
+  };
+  if (Object.keys(metadata).length === 0) return description;
+  return { ...description, metadata };
+}
+
+function describeTransformMetadata(transforms, fieldTransforms) {
+  if (transforms.length === 0 && fieldTransforms.length === 0) return null;
+
+  return {
+    transforms: {
+      contract: transforms.length,
+      fields: fieldTransforms.map((fieldTransform) => ({
+        path: [...fieldTransform.path],
+        count: fieldTransform.transforms.length,
+      })),
+    },
+  };
+}
+
 function describeNode(node) {
   if (!node) return { kind: 'unknown' };
 
@@ -483,41 +579,67 @@ function describeNode(node) {
 }
 
 function toJSONSchema(description) {
-  switch (description.kind) {
-    case 'string':
-    case 'number':
-    case 'boolean':
-    case 'null':
-      return { type: description.kind };
+  const schema = (() => {
+    switch (description.kind) {
+      case 'string':
+      case 'number':
+      case 'boolean':
+      case 'null':
+        return { type: description.kind };
 
-    case 'bigint':
-      return { type: 'integer' };
+      case 'bigint':
+        return { type: 'integer' };
 
-    case 'array':
-      return { type: 'array', items: toJSONSchema(description.element) };
+      case 'array':
+        return { type: 'array', items: toJSONSchema(description.element) };
 
-    case 'object':
-      return objectToJSONSchema(description);
+      case 'object':
+        return objectToJSONSchema(description);
 
-    case 'literal':
-      return literalToJSONSchema(description.value);
+      case 'literal':
+        return literalToJSONSchema(description.value);
 
-    case 'union':
-      return unionToJSONSchema(description.variants);
+      case 'union':
+        return unionToJSONSchema(description.variants);
 
-    case 'reference':
-      return { $ref: `#/$defs/${description.name}` };
+      case 'reference':
+        return { $ref: `#/$defs/${description.name}` };
 
-    case 'any':
-    case 'unknown':
-      return {};
+      case 'any':
+      case 'unknown':
+        return {};
 
-    case 'never':
-      return { not: {} };
+      case 'never':
+        return { not: {} };
 
-    default:
-      return {};
+      default:
+        return {};
+    }
+  })();
+
+  return applyProjectionMetadata(schema, description.metadata);
+}
+
+function applyProjectionMetadata(schema, metadata) {
+  if (!metadata) return schema;
+
+  const projected = { ...schema };
+  if (metadata.name) projected.title = metadata.name;
+  if (metadata.description) projected.description = metadata.description;
+  if (metadata.version) projected['x-version'] = metadata.version;
+  if (metadata.tags) projected['x-tags'] = [...metadata.tags];
+  return metadataFirst(projected);
+}
+
+function metadataFirst(schema) {
+  const ordered = {};
+  for (const key of ['title', 'description', 'x-version', 'x-tags']) {
+    if (key in schema) ordered[key] = schema[key];
   }
+  for (const [key, value] of Object.entries(schema)) {
+    if (!(key in ordered)) ordered[key] = value;
+  }
+  return ordered;
 }
 
 function literalToJSONSchema(value) {
@@ -587,7 +709,29 @@ function collectRegistryNames(description, names = new Set()) {
 }
 
 function toTypeScriptDeclaration(name, description, registryNames = []) {
-  return `type ${name} = ${typeScriptExpression(description, registryNames)}`;
+  const declaration = `type ${name} = ${typeScriptExpression(description, registryNames)}`;
+  const comment = typeScriptMetadataComment(description.metadata);
+  return comment ? `${comment}\n${declaration}` : declaration;
+}
+
+function typeScriptMetadataComment(metadata) {
+  if (!metadata) return '';
+
+  const lines = [];
+  if (metadata.description) lines.push(metadata.description);
+  if (metadata.version) lines.push(`@version ${metadata.version}`);
+  if (metadata.tags) lines.push(`@tags ${metadata.tags.join(', ')}`);
+  if (lines.length === 0) return '';
+
+  return [
+    '/**',
+    ...lines.map((line) => ` * ${escapeCommentLine(line)}`),
+    ' */',
+  ].join('\n');
+}
+
+function escapeCommentLine(line) {
+  return String(line).replaceAll('*/', '*\\/');
 }
 
 function typeScriptExpression(description, registryNames = []) {
@@ -824,42 +968,119 @@ function diffContracts(after, before) {
     throw new Error('Contract diff currently supports object contracts only');
   }
 
+  return [
+    ...diffObjectDescriptions(after, before, []),
+    ...diffMetadata(after.metadata, before.metadata),
+  ];
+}
+
+function diffObjectDescriptions(after, before, path) {
   const afterProperties = propertiesByKey(after);
   const beforeProperties = propertiesByKey(before);
-  const added = [];
-  const removed = [];
-  const changed = [];
-  const requiredness = [];
+  const changes = [];
 
   for (const [key, afterField] of afterProperties) {
     const beforeField = beforeProperties.get(key);
+    const fieldPath = [...path, key];
     if (!beforeField) {
-      added.push({ key, field: afterField });
+      changes.push({
+        kind: 'property.added',
+        path: fieldPath,
+        contract: afterField.contract,
+        impact: 'non-breaking',
+      });
       continue;
     }
 
-    if (!sameDescription(afterField.contract, beforeField.contract)) {
-      changed.push({
-        key,
-        before: beforeField.contract,
-        after: afterField.contract,
+    if (
+      afterField.contract.kind === 'object' &&
+      beforeField.contract.kind === 'object'
+    ) {
+      changes.push(
+        ...diffObjectDescriptions(
+          afterField.contract,
+          beforeField.contract,
+          fieldPath,
+        ),
+      );
+    } else if (!sameDescription(afterField.contract, beforeField.contract)) {
+      changes.push({
+        kind: 'property.changed',
+        path: fieldPath,
+        from: beforeField.contract,
+        to: afterField.contract,
+        impact: impactForContractChange(
+          beforeField.contract,
+          afterField.contract,
+        ),
       });
     }
 
     if (afterField.required !== beforeField.required) {
-      requiredness.push({
-        key,
-        before: beforeField.required ? 'required' : 'optional',
-        after: afterField.required ? 'required' : 'optional',
+      changes.push({
+        kind: 'property.required_changed',
+        path: fieldPath,
+        from: beforeField.required,
+        to: afterField.required,
+        impact: afterField.required ? 'breaking' : 'non-breaking',
       });
     }
   }
 
   for (const [key, beforeField] of beforeProperties) {
-    if (!afterProperties.has(key)) removed.push({ key, field: beforeField });
+    if (!afterProperties.has(key)) {
+      changes.push({
+        kind: 'property.removed',
+        path: [...path, key],
+        contract: beforeField.contract,
+        impact: 'breaking',
+      });
+    }
   }
 
-  return { added, removed, changed, requiredness };
+  if (after.exact !== before.exact) {
+    changes.push({
+      kind: 'object.exact_changed',
+      path,
+      from: before.exact,
+      to: after.exact,
+      impact: after.exact ? 'breaking' : 'non-breaking',
+    });
+  }
+
+  return changes;
+}
+
+function diffMetadata(after = {}, before = {}) {
+  const changes = [];
+  for (const key of ['name', 'version', 'description', 'tags']) {
+    if (!sameDescription(after?.[key], before?.[key])) {
+      changes.push({
+        kind: `metadata.${key}_changed`,
+        path: ['metadata', key],
+        from: cloneMetadataValue(before?.[key]),
+        to: cloneMetadataValue(after?.[key]),
+        impact: 'unknown',
+      });
+    }
+  }
+  return changes;
+}
+
+function impactForContractChange(before, after) {
+  if (isLiteralUnion(before) && isLiteralUnion(after)) return 'unknown';
+  return 'breaking';
+}
+
+function isLiteralUnion(description) {
+  return (
+    description.kind === 'union' &&
+    description.variants.every((variant) => variant.kind === 'literal')
+  );
+}
+
+function cloneMetadataValue(value) {
+  return Array.isArray(value) ? [...value] : value;
 }
 
 function propertiesByKey(description) {

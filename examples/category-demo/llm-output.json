@@ -1,0 +1,13 @@
+{
+  "id": "lead_456",
+  "name": "Morgan",
+  "email": "morgan@example.com",
+  "role": "user",
+  "profile": {
+    "age": 29
+  },
+  "lead": {
+    "urgency": "medium",
+    "summary": "Interested in using SigilJS for API contracts and AI output checks."
+  }
+}

@@ -17,6 +17,7 @@ describe('Phase 1 contract core stabilization', () => {
   test('public exports expose the current contract API', () => {
     expect(S).toBe(Sigil);
     expect(T).toBe(Sigil);
+    expect(typeof Sigil.meta).toBe('function');
     expect(realType([])).toBe('array');
     expect(typeof httpContract).toBe('function');
     expect(typeof SigilValidationError).toBe('function');
@@ -39,6 +40,8 @@ describe('Phase 1 contract core stabilization', () => {
     expect(typeof User.safeParse).toBe('function');
     expect(typeof User.serialize).toBe('function');
     expect(typeof User.transform).toBe('function');
+    expect(typeof User.withMetadata).toBe('function');
+    expect(typeof User.version).toBe('function');
     expect(typeof User.describe).toBe('function');
     expect(typeof User.toJSONSchema).toBe('function');
     expect(typeof User.toTypeScript).toBe('function');

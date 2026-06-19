@@ -1,0 +1,6 @@
+{
+  name: string
+  email: string
+  urgency: "low" | "medium" | "high"
+  summary: string
+}

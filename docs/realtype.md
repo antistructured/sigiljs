@@ -3,7 +3,7 @@
 `realType()` returns a clearer runtime type name than JavaScript's `typeof`.
 
 ```js
-import { realType } from '@weipertda/sigiljs';
+import { realType } from 'sigil';
 
 realType('hello'); // string
 realType(42); // number

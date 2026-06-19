@@ -103,4 +103,25 @@ describe('Phase 6 JSON Schema projection', () => {
       required: ['email'],
     });
   });
+
+  test('projects contract metadata where JSON Schema supports it', () => {
+    const User = sigil({ name: String }).withMetadata({
+      name: 'User',
+      version: '1.2.0',
+      description: 'Trusted user boundary object.',
+      tags: ['api', 'user'],
+    });
+
+    expect(User.toJSONSchema()).toEqual({
+      title: 'User',
+      description: 'Trusted user boundary object.',
+      'x-version': '1.2.0',
+      'x-tags': ['api', 'user'],
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+      },
+      required: ['name'],
+    });
+  });
 });

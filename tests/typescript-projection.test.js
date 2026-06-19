@@ -41,4 +41,21 @@ describe('Phase 7 TypeScript projection', () => {
 
     expect(User.toTypeScript('User')).toBe(`type User = {\n  email: Email\n}`);
   });
+
+  test('projects contract metadata as a TypeScript doc comment', () => {
+    const User = sigil({ id: Number }).withMetadata({
+      description: 'Trusted user boundary object.',
+      version: '1.2.0',
+      tags: ['api', 'user'],
+    });
+
+    expect(User.toTypeScript('User')).toBe(`/**
+ * Trusted user boundary object.
+ * @version 1.2.0
+ * @tags api, user
+ */
+type User = {
+  id: number
+}`);
+  });
 });

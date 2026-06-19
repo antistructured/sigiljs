@@ -15,7 +15,7 @@ For now, `mock()` and `cases()` live in core while the testing API stabilizes.
 `mock()` generates a simple valid sample value:
 
 ```js
-import { oneOf, optional, sigil } from '@weipertda/sigiljs';
+import { oneOf, optional, sigil } from 'sigil';
 
 const User = sigil({
   id: Number,

@@ -7,7 +7,7 @@ SigilJS contracts are executable data contracts. They can validate runtime data 
 JSON Schema is the first serious projection.
 
 ```js
-import { oneOf, sigil } from '@weipertda/sigiljs';
+import { oneOf, sigil } from 'sigil';
 
 const User = sigil.exact({
   id: Number,

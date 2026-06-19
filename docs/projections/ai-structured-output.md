@@ -22,7 +22,7 @@ For now, AI examples live in core docs/examples while the projection API stabili
 ## Structured output example
 
 ```js
-import { oneOf, optional, sigil } from '@weipertda/sigiljs';
+import { oneOf, optional, sigil } from 'sigil';
 
 const LeadIntent = sigil.exact({
   name: String,

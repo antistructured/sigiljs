@@ -5,7 +5,7 @@ SigilJS should remain a single package until the core API is stable enough to ju
 Current package:
 
 ```txt
-@weipertda/sigiljs
+sigil
 ```
 
 Do not create packages just for aesthetics. A package should exist only when it has a clear job, a stable boundary, and a user benefit that outweighs ecosystem complexity.
