@@ -27,6 +27,18 @@ async function fixtureSchemas(beforeSchema, afterSchema) {
 }
 
 describe('Phase 14 CLI foundation', () => {
+  test('prints CLI help with command examples', async () => {
+    const { stdout, exitCode } =
+      await $`bun run src/playground.js --help`.quiet();
+
+    const out = stdout.toString();
+    expect(exitCode).toBe(0);
+    expect(out).toContain('SigilJS CLI');
+    expect(out).toContain('Usage: sigil <command> <contract-file> [data-file]');
+    expect(out).toContain('sigil check contracts/user.sigil data/user.json');
+    expect(out).toContain('sigil types contracts/user.sigil User');
+  });
+
   test('check validates a JSON file against a .sigil schema file with human output', async () => {
     const { schemaPath, dataPath } = await fixtureFiles(
       '{ id: number, name: string }',

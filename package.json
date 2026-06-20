@@ -1,11 +1,12 @@
 {
-  "name": "sigils",
+  "name": "@weipertda/sigiljs",
   "version": "0.3.0",
   "description": "Executable data contracts for JavaScript",
   "keywords": [
     "bun",
     "contracts",
     "data-contracts",
+    "executable-contracts",
     "javascript",
     "json-schema",
     "openapi",
@@ -19,10 +20,15 @@
     "validation",
     "zero-dependency"
   ],
+  "publishConfig": { "access": "public" },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/antistructured/sigiljs.git"
   },
+  "bugs": {
+    "url": "https://github.com/antistructured/sigiljs/issues"
+  },
+  "homepage": "https://github.com/antistructured/sigiljs#readme",
   "license": "MIT",
   "author": {
     "name": "Daniel Weipert",
@@ -35,11 +41,12 @@
   },
   "main": "./src/index.js",
   "files": [
-    "src",
-    "README.md",
-    "LICENSE",
+    "bin",
     "docs",
-    "examples"
+    "examples",
+    "LICENSE",
+    "README.md",
+    "src"
   ],
   "bin": {
     "sigil": "./src/playground.js"

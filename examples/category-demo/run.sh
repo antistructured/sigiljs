@@ -9,34 +9,39 @@ step() {
   echo "### $1"
 }
 
-echo "SigilJS category demo"
-echo "Define structure once. Project it everywhere."
+echo 'SigilJS category demo'
+echo 'Define structure once. Project it everywhere.'
 
-step "1. Define contract"
+step '1. Define contract'
 echo "$SCRIPT_DIR/user.sigil"
 sed 's/^/  /' "$SCRIPT_DIR/user.sigil"
 
-step "2. Enforce runtime API data"
+step '2. Enforce runtime API data'
 bun run "$CLI" check "$SCRIPT_DIR/user.sigil" "$SCRIPT_DIR/api-response.json"
 
-step "3. Show failure diagnostics"
+step '3. Show path-aware failure'
 set +e
-bun run "$CLI" check "$SCRIPT_DIR/user.sigil" "$SCRIPT_DIR/bad-api-response.json"
+bun run "$CLI" check "$SCRIPT_DIR/user.sigil" "$SCRIPT_DIR/bad-api-response.json" > /tmp/sigil-category-failure.out 2>/tmp/sigil-category-failure.err
 status=$?
 set -e
+cat /tmp/sigil-category-failure.out
+cat /tmp/sigil-category-failure.err >&2
 echo "exit status: $status"
 
-step "4. Project TypeScript"
+step '4. Project TypeScript'
 bun run "$CLI" types "$SCRIPT_DIR/user.sigil" User
 
-step "5. Project JSON Schema"
+step '5. Project JSON Schema'
 bun run "$CLI" json-schema "$SCRIPT_DIR/user.sigil"
 
-step "6. Diff contract versions"
+step '6. Project OpenAPI'
+bun run "$CLI" openapi "$SCRIPT_DIR/user.sigil"
+
+step '7. Diff contract versions'
 bun run "$CLI" diff "$SCRIPT_DIR/user.sigil" "$SCRIPT_DIR/user-v2.sigil"
 
-step "7. Validate AI structured output"
+step '8. Validate AI structured output'
 bun run "$CLI" safe-parse "$SCRIPT_DIR/user.sigil" "$SCRIPT_DIR/llm-output.json"
 
 echo
-echo "Done: one executable contract validated runtime data, produced projections, detected contract changes, and enforced AI structured output."
+echo 'Done: one executable contract validated runtime data, produced projections, detected contract changes, and enforced AI structured output.'

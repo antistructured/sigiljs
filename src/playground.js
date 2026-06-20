@@ -16,10 +16,49 @@ const COMMANDS = new Set([
 ]);
 const args = process.argv.slice(2);
 
-if (COMMANDS.has(args[0])) {
+if (isHelpRequest(args)) {
+  printHelp();
+  process.exit(0);
+} else if (COMMANDS.has(args[0])) {
   await runCommand(args[0], args.slice(1));
 } else {
   runLegacyPlayground(args);
+}
+
+function isHelpRequest(args) {
+  return (
+    args.length === 0 ||
+    args[0] === '--help' ||
+    args[0] === '-h' ||
+    args[0] === 'help'
+  );
+}
+
+function printHelp() {
+  console.log(`SigilJS CLI
+
+Executable data contracts for JavaScript.
+
+Usage: sigil <command> <contract-file> [data-file]
+
+Commands:
+  check       Validate JSON data and print human-readable success/failure
+  parse       Parse JSON data or exit non-zero with diagnostics
+  safe-parse  Parse JSON data and print { success, data } or { success, error }
+  describe    Print the stable contract description JSON
+  json-schema Print the JSON Schema projection
+  types       Print a TypeScript type declaration
+  openapi     Print the OpenAPI-compatible projection
+  mock        Print deterministic valid sample data
+  diff        Compare two contract files
+
+Examples:
+  sigil check contracts/user.sigil data/user.json
+  sigil parse contracts/user.sigil data/user.json --json
+  sigil types contracts/user.sigil User
+  sigil json-schema contracts/user.sigil
+  sigil diff contracts/user-v1.sigil contracts/user-v2.sigil
+`);
 }
 
 async function runCommand(command, args) {

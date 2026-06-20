@@ -13,13 +13,13 @@ A sigil is not a schema. It is a contract object.
 ## Install
 
 ```bash
-bun add sigil
+bun add @weipertda/sigiljs
 ```
 
 or:
 
 ```bash
-npm install sigil
+npm install @weipertda/sigiljs
 ```
 
 ## Define / Enforce / Transform / Project
@@ -34,10 +34,10 @@ SigilJS gives you one contract object you can use across the full data workflow:
 ## Code example
 
 ```js
-import { oneOf, optional, pipe, sigil, trim } from 'sigil';
+import { oneOf, optional, pipe, sigil, trim, union } from '@weipertda/sigiljs';
 
 const User = sigil.exact({
-  id: String,
+  id: union(String, Number),
   name: pipe(String, trim()),
   email: String,
   role: oneOf('admin', 'user'),
@@ -77,7 +77,7 @@ Runnable workflow examples live in [`examples/workflows/`](examples/workflows/RE
 Use SigilJS anywhere data crosses a boundary: APIs, databases, forms, events, queues, webhooks, config files, local storage, plugin systems, and AI structured outputs.
 
 ```js
-import { oneOf, sigil } from 'sigil';
+import { oneOf, sigil } from '@weipertda/sigiljs';
 
 const ApiResponse = sigil.exact({
   id: String,
@@ -172,6 +172,16 @@ sigil safe-parse contracts/lead-intent.sigil data/llm-output.json
 
 See [`examples/workflows/cli-ai-output-check/`](examples/workflows/cli-ai-output-check/README.md).
 
+## Published package examples
+
+Copy-paste-safe examples that import from the published package live in [`examples/published/`](examples/published/):
+
+```js
+import { sigil } from '@weipertda/sigiljs';
+```
+
+These examples are designed to run from a fresh install, not from local source paths.
+
 ## Docs
 
 - [Quickstart](docs/quickstart.md)
@@ -196,7 +206,7 @@ SigilJS does not claim to replace Zod. It is a focused alternative when you want
 
 SigilJS is moving toward a stable v1 around the four pillars: Define, Enforce, Transform, and Project.
 
-Near-term work stays in the single `sigil` package. Future package boundaries such as `@sigil/core`, `@sigil/json-schema`, `@sigil/ts`, `@sigil/openapi`, and `@sigil/cli` remain planned boundaries, not current packages, until the public APIs are stable.
+Near-term work stays in the single `@weipertda/sigiljs` package. Future package boundaries remain planned boundaries, not current packages, until the public APIs are stable.
 
 ## License
 

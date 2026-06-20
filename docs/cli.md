@@ -5,6 +5,7 @@ SigilJS includes a Bun-native CLI for contract workflows outside application cod
 The package currently exposes the `sigil` bin from core:
 
 ```bash
+sigil --help
 sigil check schema.sigil data.json
 sigil parse schema.sigil data.json
 sigil safe-parse schema.sigil data.json
@@ -27,7 +28,15 @@ sigil diff user-v1.sigil user-v2.sigil --json
 When working from the repository, run the same CLI through Bun:
 
 ```bash
+bun run src/playground.js --help
 bun run src/playground.js check schema.sigil data.json
+```
+
+After installing the published package, the bin command is available as `sigil`:
+
+```bash
+bun add @weipertda/sigiljs
+bunx sigil --help
 ```
 
 The CLI is dependency-free and intentionally small. A future package may split this into `@sigil/cli`, but not until the core API is stable.
