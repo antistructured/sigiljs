@@ -82,3 +82,26 @@ This is the projection pattern future packages should follow:
 ```
 
 For now, JSON Schema projection lives inside core until the public API stabilizes.
+
+## Projection errors
+
+Some runtime contract behavior cannot always be represented perfectly in every projection.
+
+When a projection cannot safely represent a contract description, SigilJS throws a `SigilProjectionError` instead of silently emitting a misleading schema or crashing with a raw `TypeError`.
+
+Projection errors include:
+
+- `code`
+- `projection`
+- `path`
+- `kind`
+- `reason`
+- `message`
+
+**Broad object behavior**
+
+Broad `object` descriptions are common and remain projectable.
+
+- Structured objects project their known fields.
+- Broad `object` descriptions without `properties` project as `{ type: 'object' }` instead of inventing property constraints.
+- Broad `Array` descriptions without an `element` project as `{ type: 'array' }` instead of inventing item constraints.

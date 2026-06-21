@@ -2,16 +2,16 @@
 
 Projection turns a Sigil contract into another structural representation.
 
-OpenAPI projection builds on the JSON Schema projection:
+OpenAPI projection currently builds on the JSON Schema projection:
 
 ```txt
-Sigil contract → describe() → JSON Schema → OpenAPI schema
+Sigil contract → describe() → JSON Schema → OpenAPI-compatible schema
 ```
 
-For now, `toOpenAPI()` returns an OpenAPI-compatible schema object using `toJSONSchema()` as the base.
+For now, `toOpenAPI()` returns an OpenAPI-compatible **schema object** using `toJSONSchema()` as the base. It does not build a full OpenAPI document and does not create route definitions.
 
 ```js
-import { oneOf, sigil } from 'sigil';
+import { oneOf, sigil } from '@weipertda/sigiljs';
 
 const User = sigil.exact({
   id: Number,
@@ -37,9 +37,24 @@ returns:
 }
 ```
 
+## Current support level
+
+`toOpenAPI()` is schema-only. It supports the same stable contract-description subset as the JSON Schema projection where that output is OpenAPI-compatible:
+
+- object schemas
+- required fields
+- optional fields omitted from `required`
+- arrays
+- literal unions as `enum`
+- nested objects
+- exact mode as `additionalProperties: false`
+- metadata `name` / `description` / `version` / `tags` as `title` / `description` / `x-version` / `x-tags`
+
+Unsupported kinds follow JSON Schema projection behavior. For example, kinds that cannot be represented honestly throw rather than emitting a misleading schema.
+
 ## Runtime enforcement and documentation from one contract
 
-A Sigil can enforce runtime data and project the same shape into OpenAPI docs:
+A Sigil can enforce runtime data and project the same shape into OpenAPI request/response docs:
 
 ```js
 const CreateUserRequest = sigil.exact({
@@ -59,10 +74,9 @@ const requestBody = {
 };
 ```
 
-See:
+This is intentionally just the schema portion. Route paths, operations, parameters, status codes, and framework adapters are out of scope for the current projection.
 
-- [`../../examples/http-request-contract.js`](../../examples/http-request-contract.js)
-- [`../../examples/http-response-contract.js`](../../examples/http-response-contract.js)
+The framework-neutral `httpContract()` helper can compose request/response schema objects for simple docs, but it is not a full OpenAPI document builder.
 
 ## Package direction
 
@@ -74,4 +88,4 @@ Future direction:
 @sigil/openapi
 ```
 
-That package should consume `describe()` or the same stable projection model rather than parser internals.
+That package should consume `describe()` or the same stable projection model rather than parser internals. It should only grow full document/route helpers after the schema projection boundary is stable.

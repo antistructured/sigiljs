@@ -5,6 +5,13 @@ import { parse } from './core/parser.js';
 import { partial } from './core/partial.js';
 import { register, resolve } from './core/registry.js';
 import { validate } from './core/validate.js';
+import { projectionError } from './projection-error.js';
+import { projectCases } from './projections/cases.js';
+import { projectFormConstraints } from './projections/forms.js';
+import { projectJSONSchema } from './projections/json-schema.js';
+import { projectMock } from './projections/mock.js';
+import { projectOpenAPI } from './projections/openapi.js';
+import { projectTypeScript } from './projections/typescript.js';
 
 // Memoize fully-constructed Sigil objects by raw schema string.
 const _sigilCache = new Map();
@@ -79,8 +86,8 @@ function createSigil(options = {}, strings, ...values) {
         },
         [raw],
       ),
-    withMetadata: (metadata) =>
-      createSigil(
+    withMetadata: (metadata) => {
+      const next = createSigil(
         {
           ...sigil.options,
           transforms,
@@ -88,7 +95,10 @@ function createSigil(options = {}, strings, ...values) {
           metadata: mergeContractMetadata(contractMetadata, metadata),
         },
         [raw],
-      ),
+      );
+      if (next.name) register(next.name, next);
+      return next;
+    },
     version: (version) => sigil.withMetadata({ version }),
     describe: () =>
       describeContract(
@@ -97,18 +107,16 @@ function createSigil(options = {}, strings, ...values) {
         fieldTransforms,
         contractMetadata,
       ),
-    toJSONSchema: () => toJSONSchema(sigil.describe()),
-    toTypeScript: (name) => {
-      const described = sigil.describe();
-      const registryNames = Array.from(collectRegistryNames(described)).filter(
-        (candidate) => Boolean(resolve(candidate)),
-      );
-      return toTypeScriptDeclaration(name, described, registryNames);
-    },
-    toOpenAPI: () => toOpenAPI(sigil.toJSONSchema()),
-    toFormConstraints: () => toFormConstraints(sigil.describe()),
-    mock: () => mockValue(sigil.describe()),
-    cases: () => casesFor(sigil.describe()),
+    toJSONSchema: (options) => projectJSONSchema(sigil.describe(), options),
+    toTypeScript: (name, options = {}) =>
+      projectTypeScript(sigil.describe(), { ...options, name, resolve }),
+    toOpenAPI: (options) => projectOpenAPI(sigil.describe(), options),
+    toFormConstraints: (options) =>
+      projectFormConstraints(sigil.describe(), options),
+    mock: (options = {}) =>
+      projectMock(sigil.describe(), { ...options, resolve }),
+    cases: (options = {}) =>
+      projectCases(sigil.describe(), { ...options, resolve }),
     diff: (other) =>
       diffContracts(sigil.describe(), describeOtherContract(other)),
     compile: () => validator,
@@ -578,384 +586,6 @@ function describeNode(node) {
   }
 }
 
-function toJSONSchema(description) {
-  const schema = (() => {
-    switch (description.kind) {
-      case 'string':
-      case 'number':
-      case 'boolean':
-      case 'null':
-        return { type: description.kind };
-
-      case 'bigint':
-        return { type: 'integer' };
-
-      case 'array':
-        return { type: 'array', items: toJSONSchema(description.element) };
-
-      case 'object':
-        return objectToJSONSchema(description);
-
-      case 'literal':
-        return literalToJSONSchema(description.value);
-
-      case 'union':
-        return unionToJSONSchema(description.variants);
-
-      case 'reference':
-        return { $ref: `#/$defs/${description.name}` };
-
-      case 'any':
-      case 'unknown':
-        return {};
-
-      case 'never':
-        return { not: {} };
-
-      default:
-        return {};
-    }
-  })();
-
-  return applyProjectionMetadata(schema, description.metadata);
-}
-
-function applyProjectionMetadata(schema, metadata) {
-  if (!metadata) return schema;
-
-  const projected = { ...schema };
-  if (metadata.name) projected.title = metadata.name;
-  if (metadata.description) projected.description = metadata.description;
-  if (metadata.version) projected['x-version'] = metadata.version;
-  if (metadata.tags) projected['x-tags'] = [...metadata.tags];
-  return metadataFirst(projected);
-}
-
-function metadataFirst(schema) {
-  const ordered = {};
-  for (const key of ['title', 'description', 'x-version', 'x-tags']) {
-    if (key in schema) ordered[key] = schema[key];
-  }
-  for (const [key, value] of Object.entries(schema)) {
-    if (!(key in ordered)) ordered[key] = value;
-  }
-  return ordered;
-}
-
-function literalToJSONSchema(value) {
-  if (value === null) return { type: 'null' };
-  return { const: value };
-}
-
-function objectToJSONSchema(description) {
-  const schema = {
-    type: 'object',
-    properties: {},
-  };
-  const required = [];
-
-  for (const property of description.properties) {
-    schema.properties[property.key] = toJSONSchema(property.contract);
-    if (property.required) required.push(property.key);
-  }
-
-  if (required.length > 0) schema.required = required;
-  if (description.exact) schema.additionalProperties = false;
-
-  return schema;
-}
-
-function unionToJSONSchema(variants) {
-  if (variants.every((variant) => variant.kind === 'literal')) {
-    return { enum: variants.map((variant) => variant.value) };
-  }
-
-  if (
-    variants.every((variant) => JSON_SCHEMA_PRIMITIVE_TYPES.has(variant.kind))
-  ) {
-    return { type: variants.map((variant) => variant.kind) };
-  }
-
-  return { anyOf: variants.map(toJSONSchema) };
-}
-
-const JSON_SCHEMA_PRIMITIVE_TYPES = new Set([
-  'string',
-  'number',
-  'boolean',
-  'null',
-]);
-
-function collectRegistryNames(description, names = new Set()) {
-  if (!description || typeof description !== 'object') return names;
-
-  switch (description.kind) {
-    case 'object':
-      for (const property of description.properties)
-        collectRegistryNames(property.contract, names);
-      return names;
-    case 'array':
-      return collectRegistryNames(description.element, names);
-    case 'union':
-      for (const variant of description.variants)
-        collectRegistryNames(variant, names);
-      return names;
-    case 'reference':
-      names.add(description.name);
-      return names;
-    default:
-      return names;
-  }
-}
-
-function toTypeScriptDeclaration(name, description, registryNames = []) {
-  const declaration = `type ${name} = ${typeScriptExpression(description, registryNames)}`;
-  const comment = typeScriptMetadataComment(description.metadata);
-  return comment ? `${comment}\n${declaration}` : declaration;
-}
-
-function typeScriptMetadataComment(metadata) {
-  if (!metadata) return '';
-
-  const lines = [];
-  if (metadata.description) lines.push(metadata.description);
-  if (metadata.version) lines.push(`@version ${metadata.version}`);
-  if (metadata.tags) lines.push(`@tags ${metadata.tags.join(', ')}`);
-  if (lines.length === 0) return '';
-
-  return [
-    '/**',
-    ...lines.map((line) => ` * ${escapeCommentLine(line)}`),
-    ' */',
-  ].join('\n');
-}
-
-function escapeCommentLine(line) {
-  return String(line).replaceAll('*/', '*\\/');
-}
-
-function typeScriptExpression(description, registryNames = []) {
-  switch (description.kind) {
-    case 'string':
-    case 'number':
-    case 'boolean':
-    case 'null':
-    case 'any':
-    case 'unknown':
-      return description.kind;
-
-    case 'bigint':
-      return 'bigint';
-
-    case 'array':
-      return `${typeScriptExpression(description.element, registryNames)}[]`;
-
-    case 'object':
-      return formatObjectType(description, registryNames);
-
-    case 'literal':
-      return `${JSON.stringify(description.value)}`;
-
-    case 'union':
-      return description.variants
-        .map((variant) => typeScriptExpression(variant, registryNames))
-        .join(' | ');
-
-    case 'reference': {
-      const referenceName = description.name;
-      const namedDescription =
-        registryNames.includes(referenceName) ? referenceName : null;
-      return namedDescription ?? referenceName;
-    }
-
-    case 'never':
-      return 'never';
-
-    default:
-      return 'unknown';
-  }
-}
-
-function formatObjectType(description, registryNames) {
-  const properties = description.properties
-    .map((property) => {
-      const valueType = typeScriptExpression(property.contract, registryNames);
-      const optionalFlag = property.required ? '' : '?';
-      return `  ${property.key}${optionalFlag}: ${valueType}`;
-    })
-    .join('\n');
-
-  return `{\n${properties}\n}`;
-}
-
-function toOpenAPI(jsonSchema) {
-  return cloneJSON(jsonSchema);
-}
-
-function toFormConstraints(description) {
-  if (description.kind !== 'object') return {};
-
-  const constraints = {};
-  for (const property of description.properties) {
-    constraints[property.key] = {
-      required: property.required,
-      ...formConstraintFor(property.contract),
-    };
-  }
-  return constraints;
-}
-
-function formConstraintFor(description) {
-  switch (description.kind) {
-    case 'string':
-      return { type: 'text' };
-    case 'number':
-    case 'bigint':
-      return { type: 'number' };
-    case 'boolean':
-      return { type: 'checkbox' };
-    case 'union':
-      return formConstraintForUnion(description.variants);
-    case 'literal':
-      return { type: 'select', options: [description.value] };
-    default:
-      return { type: 'text' };
-  }
-}
-
-function formConstraintForUnion(variants) {
-  if (variants.every((variant) => variant.kind === 'literal')) {
-    return {
-      type: 'select',
-      options: variants.map((variant) => variant.value),
-    };
-  }
-
-  const accepted = variants.map((variant) => formInputTypeFor(variant));
-  return {
-    type: accepted[0] ?? 'text',
-    accepts: [...new Set(accepted)],
-  };
-}
-
-function formInputTypeFor(description) {
-  switch (description.kind) {
-    case 'number':
-    case 'bigint':
-      return 'number';
-    case 'boolean':
-      return 'checkbox';
-    default:
-      return 'text';
-  }
-}
-
-function mockValue(description) {
-  switch (description.kind) {
-    case 'string':
-      return 'string';
-    case 'number':
-      return 1;
-    case 'boolean':
-      return true;
-    case 'bigint':
-      return 1n;
-    case 'null':
-      return null;
-    case 'array':
-      return [mockValue(description.element)];
-    case 'object':
-      return mockObject(description);
-    case 'literal':
-      return description.value;
-    case 'union':
-      return mockValue(description.variants[0] ?? { kind: 'unknown' });
-    case 'reference': {
-      const sigil = resolve(description.name);
-      return sigil ? sigil.mock() : undefined;
-    }
-    default:
-      return undefined;
-  }
-}
-
-function mockObject(description) {
-  const value = {};
-  for (const property of description.properties) {
-    if (!property.required) continue;
-    value[property.key] = mockValue(property.contract);
-  }
-  return value;
-}
-
-function casesFor(description) {
-  const valid = mockValue(description);
-  return {
-    valid: [valid],
-    invalid: [invalidValue(description, valid)],
-  };
-}
-
-function invalidValue(description, valid) {
-  switch (description.kind) {
-    case 'string':
-      return 1;
-    case 'number':
-    case 'bigint':
-      return 'number';
-    case 'boolean':
-      return 'boolean';
-    case 'null':
-      return 'null';
-    case 'array':
-      return 'array';
-    case 'object':
-      return invalidObject(description, valid);
-    case 'literal':
-      return invalidLiteral(description.value);
-    case 'union':
-      return invalidUnion(description.variants);
-    case 'reference': {
-      const sigil = resolve(description.name);
-      return sigil ? sigil.cases().invalid[0] : undefined;
-    }
-    default:
-      return null;
-  }
-}
-
-function invalidObject(description, valid) {
-  const firstRequired = description.properties.find(
-    (property) => property.required,
-  );
-  if (!firstRequired) return 'object';
-
-  const invalid = { ...valid };
-  delete invalid[firstRequired.key];
-  return invalid;
-}
-
-function invalidLiteral(value) {
-  switch (typeof value) {
-    case 'string':
-      return `${value}_invalid`;
-    case 'number':
-      return value + 1;
-    case 'boolean':
-      return !value;
-    default:
-      return value === null ? 'null' : undefined;
-  }
-}
-
-function invalidUnion(variants) {
-  const kinds = new Set(variants.map((variant) => variant.kind));
-  if (!kinds.has('boolean')) return false;
-  if (!kinds.has('number')) return 1;
-  if (!kinds.has('string')) return 'string';
-  return null;
-}
-
 function describeOtherContract(other) {
   if (!other || typeof other.describe !== 'function') {
     throw new Error('Contract diff requires another Sigil contract');
@@ -1091,8 +721,4 @@ function propertiesByKey(description) {
 
 function sameDescription(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
-}
-
-function cloneJSON(value) {
-  return JSON.parse(JSON.stringify(value));
 }

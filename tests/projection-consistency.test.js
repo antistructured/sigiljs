@@ -90,9 +90,9 @@ describe('Projection consistency', () => {
   role: "admin" | "user"
   tags: string[]
   profile: {
-  displayName: string
-  timezone?: string
-}
+    displayName: string
+    timezone?: string
+  }
 }`);
   });
 });

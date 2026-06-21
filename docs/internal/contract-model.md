@@ -236,6 +236,42 @@ The stable model must represent:
 - contract metadata
 - transform metadata
 
+## JSON Schema projection policy
+
+`toJSONSchema()` consumes the stable description model through `src/projections/json-schema.js`.
+
+Supported JSON Schema projections include primitives, `bigint` as `{ type: 'integer' }`, `null`, typed arrays, broad `Array` descriptions as `{ type: 'array' }`, broad `Object` descriptions as `{ type: 'object' }`, objects, optional fields, exact mode as `additionalProperties: false`, literal values, literal unions as `enum`, primitive unions as JSON Schema type arrays, mixed unions as `anyOf`, nested objects, named references, and contract metadata.
+
+Documented fallbacks:
+
+- `any` / `unknown` project to `{}` because they intentionally accept unconstrained JSON values.
+- Broad array descriptions without an `element` project to `{ type: 'array' }` rather than inventing item constraints.
+- Broad object descriptions without `properties` project to `{ type: 'object' }` rather than inventing property constraints.
+
+Unsupported kinds throw clear errors instead of silently emitting misleading schemas. For example, `symbol` currently throws `JSON Schema projection does not support contract kind: symbol`.
+
+## TypeScript projection policy
+
+`toTypeScript(name)` consumes the stable description model through `src/projections/typescript.js` and emits strings only. It has no TypeScript compiler or runtime dependency.
+
+Supported TypeScript projections include primitives, broad arrays as `unknown[]`, broad objects as `Record<string, unknown>`, typed arrays, objects, optional fields using `?:`, unions using `|`, string/number/boolean/null literals, nested objects with stable indentation, named references, and metadata-derived names.
+
+Naming rules:
+
+- An explicit `toTypeScript('Name')` argument controls the top-level declaration name.
+- If no explicit name is provided, `metadata.name` is used when available.
+- Named references use the referenced contract's `metadata.name` when available, otherwise the registry/reference name.
+
+The emitted type is structural documentation/codegen only. It does not claim runtime safety by itself; runtime enforcement still comes from Sigil contract methods such as `parse()`, `safeParse()`, `assert()`, and `check()`.
+
+## OpenAPI projection policy
+
+`toOpenAPI()` consumes the stable description model through `src/projections/openapi.js` and currently returns an OpenAPI-compatible schema object. It builds on JSON Schema projection behavior rather than maintaining a separate parser or schema generator.
+
+Current OpenAPI support is schema-only. It covers objects, required and optional fields, arrays, literal unions, nested objects, exact mode as `additionalProperties: false`, and metadata such as `description`. It does not build a full OpenAPI document, route table, path item, operation object, parameter list, status-code map, or HTTP framework adapter.
+
+Unsupported contract kinds follow JSON Schema projection behavior. The OpenAPI projection should not silently emit schemas that imply unsupported runtime semantics.
+
 Current tests cover these shapes in:
 
 - `tests/describe-model.test.js`

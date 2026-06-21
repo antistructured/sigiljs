@@ -118,9 +118,9 @@ type User = {
   role: "admin" | "user"
   email: Email
   profile: {
-  age?: number
-  tags: string[]
-}
+    age?: number
+    tags: string[]
+  }
 }`;
 
     const description = User.describe();

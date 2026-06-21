@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { oneOf, optional, sigil } from '../src/index.js';
+import { Sigil, oneOf, optional, sigil } from '../src/index.js';
 
 describe('Phase 8 OpenAPI projection', () => {
   test('projects contracts to OpenAPI-compatible schemas using JSON Schema as the base', () => {
@@ -56,5 +56,41 @@ describe('Phase 8 OpenAPI projection', () => {
       },
       required: ['id'],
     });
+  });
+
+  test('projects nested contracts with arrays, optional fields, literal unions, and exact mode', () => {
+    const User = sigil.exact({
+      id: Number,
+      profile: sigil.exact({
+        displayName: String,
+        timezone: optional(String),
+        roles: Sigil`"admin"[]`,
+      }),
+    });
+
+    const expected = {
+      type: 'object',
+      properties: {
+        id: { type: 'number' },
+        profile: {
+          type: 'object',
+          properties: {
+            displayName: { type: 'string' },
+            timezone: { type: 'string' },
+            roles: {
+              type: 'array',
+              items: { const: 'admin' },
+            },
+          },
+          required: ['displayName', 'roles'],
+          additionalProperties: false,
+        },
+      },
+      required: ['id', 'profile'],
+      additionalProperties: false,
+    };
+
+    expect(User.toOpenAPI()).toEqual(expected);
+    expect(User.toOpenAPI()).toEqual(expected);
   });
 });
