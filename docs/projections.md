@@ -33,6 +33,185 @@ contract -> describe() -> projection package
 
 The current single package is `@weipertda/sigiljs`.
 
+## Public projection surfaces
+
+### `describe()`
+
+**Purpose:** return the stable contract description used by all projections.
+
+**Input:** none.
+
+**Output shape:**
+
+```ts
+{
+  kind: string
+  exact?: boolean
+  properties?: Array<{
+    key: string
+    required: boolean
+    contract: object
+  }>
+  variants?: Array<object>
+  element?: object
+  value?: any
+  name?: string
+  metadata?: {
+    name?: string
+    version?: string
+    description?: string
+    tags?: string[]
+  }
+}
+```
+
+**Behavior contract:**
+- returns a fresh plain object on every call
+- does not expose parser internals or runtime validator state
+- includes metadata only when present on the contract
+- objects use `properties` array with `key`, `required`, and `contract` fields
+- primitive unions use `variants` array
+- literal unions use `variants` array with `kind: 'literal'` and `value`
+- arrays include `element`
+- named sigil references resolve to `{ kind: 'reference', name: '...' }`
+
+**Throws:** never.
+**Experimental:** no.
+
+### `toJSONSchema()`
+
+**Purpose:** project a contract description into a JSON Schema-like object.
+
+**Input:** none. Uses `describe()` internally.
+
+**Output shape:** plain object.
+
+**Behavior contract:**
+- primitives map to `{ type: '<kind>' }`
+- `bigint` maps to `{ type: 'integer' }`
+- `null` maps to `{ type: 'null' }`
+- `boolean` maps to `{ type: 'boolean' }`
+- `any` and `unknown` map to `{}`
+- `never` maps to `{ not: {} }`
+- `symbol` is unsupported and throws `SigilProjectionError`
+- literal values map to `{ const: value }` or `{ enum: [...] }`
+- primitive unions map to `{ type: ['string', 'number', ...] }`
+- mixed unions map to `{ anyOf: [...] }`
+- objects map to `{ type: 'object', properties: { ... }, required: [...] }`
+- exact objects add `additionalProperties: false`
+- broad `Array` without `element` maps to `{ type: 'array' }`
+- broad `Object` without `properties` maps to `{ type: 'object' }`
+- named references map to `{ $ref: '#/$defs/<Name>' }`
+- metadata maps to `title`, `description`, `x-version`, `x-tags`
+
+**Throws:** `SigilProjectionError` for unsupported kinds (e.g. `symbol`).
+**Experimental:** no.
+
+### `toTypeScript(name?)`
+
+**Purpose:** emit a TypeScript type declaration string.
+
+**Input:** optional `name` string. Falls back to contract metadata name, then `'Contract'`.
+
+**Output shape:** `string`.
+
+**Behavior contract:**
+- primitives map to lowercase type keywords (`string`, `number`, `boolean`, `bigint`, `any`, `unknown`, `never`)
+- `null` maps to `null`
+- literals map to JSON-quoted literal values
+- unions map to `A | B` expressions
+- primitive unions flatten directly (e.g. `string | number`)
+- arrays map to `T[]` for simple types, `Array<T>` for unions and objects
+- objects map to `{ key: type; key?: type }`
+- broad `Object` without properties maps to `Record<string, unknown>`
+- broad `Array` without element maps to `unknown[]`
+- named references resolve via the registry and use metadata names when available
+- metadata emits a JSDoc-style doc comment above the declaration
+
+**Throws:** `SigilProjectionError` when the contract cannot be represented accurately.
+**Experimental:** no.
+
+### `toOpenAPI()`
+
+**Purpose:** return an OpenAPI-compatible schema object derived from JSON Schema projection.
+
+**Input:** none.
+
+**Output shape:** plain object (deep clone of JSON Schema output).
+
+**Behavior contract:**
+- output is structurally identical to `toJSONSchema()`
+- output is a fresh deep clone each call, so callers may mutate without affecting subsequent calls
+- metadata mapping is identical to JSON Schema
+
+**Throws:** same conditions as `toJSONSchema()`.
+**Experimental:** no.
+
+## Error handling
+
+Projections throw `SigilProjectionError` instead of raw strings or uncaught exceptions.
+
+```ts
+class SigilProjectionError extends Error {
+  code: 'SIGIL_PROJECTION_FAILED'
+  projection: string
+  path: string[]
+  kind: string | null
+  reason: string | null
+  message: string
+}
+```
+
+Callers can use `instanceof SigilProjectionError` to distinguish projection failures from validation failures or programming errors.
+
+## Metadata behavior
+
+Metadata is projected only when the target format supports it:
+
+| Metadata field | JSON Schema | OpenAPI | TypeScript |
+|------|------|------|------|
+| `name` | `title` | `title` | declaration name / type alias |
+| `description` | `description` | `description` | JSDoc comment |
+| `version` | `x-version` | `x-version` | `@version` JSDoc line |
+| `tags` | `x-tags` | `x-tags` | `@tags` JSDoc line |
+
+Metadata does not change validation behavior. Contracts without metadata project the same structural output minus the metadata fields.
+
+## Deterministic output
+
+Projections are deterministic for the same contract description:
+
+- object property order follows the original contract definition
+- union variant order is preserved
+- metadata keys are ordered before structural keys in JSON Schema / OpenAPI output
+- `describe()` returns fresh objects, so identity checks between calls are intentionally not stable
+
+## Broad descriptor behavior
+
+Broad contracts (e.g. `Sigil\`object\`` or `sigil(Object)`) are handled safely:
+
+- JSON Schema: `{ type: 'object' }`
+- TypeScript: `Record<string, unknown>`
+- OpenAPI: `{ type: 'object' }`
+
+Broad arrays without an element type:
+
+- JSON Schema: `{ type: 'array' }`
+- TypeScript: `unknown[]`
+- OpenAPI: `{ type: 'array' }`
+
+Broad descriptors do not crash projections and do not invent fields that were not declared.
+
+## Unsupported behavior
+
+Projections refuse to invent output for contract kinds they cannot represent accurately. Examples:
+
+- `symbol` contracts throw `SigilProjectionError` because JSON Schema has no `symbol` type
+- unsupported or unknown top-level kinds throw rather than emit empty schemas
+- `toTypeScript()` throws for unsupported kinds instead of falling back to `unknown`
+
+This is intentional. Silent fallback hides bugs. Structured errors let callers handle unsupported contracts explicitly.
+
 ## Current projection methods
 
 ### `toJSONSchema()`
@@ -63,13 +242,6 @@ User.toJSONSchema();
 ```
 
 This projection supports primitives, arrays, objects, optional fields, exact mode, literal unions, primitive unions, mixed unions, named references, and metadata.
-
-Broad descriptions are handled honestly:
-
-- broad `Array` without `element` projects as `{ type: 'array' }`
-- broad `Object` without `properties` projects as `{ type: 'object' }`
-
-Unsupported kinds throw structured projection errors instead of inventing misleading output.
 
 ### `toTypeScript(name?)`
 
@@ -128,55 +300,6 @@ User.toOpenAPI();
 Current support is schema-level only.
 
 It does not build full OpenAPI documents, route tables, parameters, or operation objects.
-
-### `diff(other)`
-
-Compares two object contract descriptions and reports lifecycle changes.
-
-Diff treats projection-visible description drift as the source of truth. It does not compare parser internals.
-
-## Future projections
-
-These concepts are part of the roadmap, not current shipped scope unless explicitly documented elsewhere:
-
-- `toFormConstraints()`
-- `toMarkdown()`
-- `toOpenAI()`
-- full OpenAPI document generation
-- additional `@sigil/*` packages
-
-## Projection error handling
-
-Projection failures are explicit.
-
-Some contract behavior cannot be represented perfectly in every projection. When a projection cannot safely represent a contract description, SigilJS throws a `SigilProjectionError` instead of crashing with a raw exception or emitting misleading output.
-
-Projection errors include:
-
-- `code`
-- `projection`
-- `path`
-- `kind`
-- `reason`
-- `message`
-
-Broad object behavior is explicit too:
-
-- structured `object` descriptions project their known fields
-- broad `object` descriptions without `properties` project as `{ type: 'object' }`
-- broad `Array` descriptions without `element` project as `{ type: 'array' }`
-
-## Design contract
-
-Projection support is described by the same public description model used by runtime enforcement. Projection modules should:
-
-1. accept a contract object or description object
-2. read only `describe()` output
-3. return fresh output each call
-4. preserve contract metadata when the target format supports it
-5. fail with structured `SigilProjectionError` when accuracy is impossible
-
-This is the boundary future extraction should preserve.
 
 ## Package boundary guidance
 

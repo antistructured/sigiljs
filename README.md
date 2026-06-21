@@ -184,6 +184,7 @@ These examples are designed to run from a fresh install, not from local source p
 
 ## Docs
 
+- [Public API](docs/api.md)
 - [Quickstart](docs/quickstart.md)
 - [Sigils](docs/sigils.md)
 - [CLI](docs/cli.md)

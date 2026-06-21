@@ -1,6 +1,6 @@
 # Forms Projection
 
-Projection turns a Sigil contract into another structural representation.
+**Status: Experimental. May change before 1.0.0.**
 
 Forms projection is experimental and intentionally small. It converts object contracts into basic field metadata that can help generate form inputs, labels, and client-side required markers.
 

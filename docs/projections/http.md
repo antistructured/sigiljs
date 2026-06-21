@@ -1,5 +1,7 @@
 # HTTP Boundary Helpers
 
+**Status: Experimental. May change before 1.0.0.**
+
 SigilJS can describe HTTP boundaries without depending on a web framework.
 
 Future direction:

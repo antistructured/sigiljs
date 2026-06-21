@@ -1,22 +1,22 @@
 import { describe, it, expect } from 'bun:test'
-import { T } from '../src/index.js'
+import { Sigil } from '../src/index.js'
 
 describe('object schemas and Tagged Template', () => {
   it('validates primitive structures', () => {
-    const Name = T`string`
+    const Name = Sigil`string`
     expect(Name.check('D')).toBe(true)
     expect(Name.check(42)).toBe(false)
   })
 
   it('validates optional suffix', () => {
-    const MaybeName = T`string?`
+    const MaybeName = Sigil`string?`
     expect(MaybeName.check(undefined)).toBe(true)
     expect(MaybeName.check('foo')).toBe(true)
     expect(MaybeName.check(null)).toBe(false)
   })
 
   it('validates objects', () => {
-    const User = T`
+    const User = Sigil`
     {
       name: string
       age?: number
@@ -29,7 +29,7 @@ describe('object schemas and Tagged Template', () => {
   })
 
   it('exposes sigil shape', () => {
-    const User = T`{ a: string }`
+    const User = Sigil`{ a: string }`
     expect(User).toHaveProperty('raw')
     expect(User).toHaveProperty('ast')
     expect(User).toHaveProperty('normalized')

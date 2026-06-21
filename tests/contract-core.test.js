@@ -15,12 +15,15 @@ describe('Phase 1 contract core stabilization', () => {
   });
 
   test('public exports expose the current contract API', () => {
-    expect(S).toBe(Sigil);
-    expect(T).toBe(Sigil);
     expect(typeof Sigil.meta).toBe('function');
     expect(realType([])).toBe('array');
     expect(typeof httpContract).toBe('function');
     expect(typeof SigilValidationError).toBe('function');
+  });
+
+  test('legacy aliases S and T resolve to Sigil', () => {
+    expect(S).toBe(Sigil);
+    expect(T).toBe(Sigil);
   });
 
   test('Sigil contracts have a stable executable contract object shape', () => {

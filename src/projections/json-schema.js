@@ -102,7 +102,8 @@ function objectToJSONSchema(description) {
 
 function arrayToJSONSchema(description) {
   const schema = { type: 'array' };
-  if (description.element) schema.items = projectJSONSchema(description.element);
+  if (description.element)
+    schema.items = projectJSONSchema(description.element);
   return schema;
 }
 

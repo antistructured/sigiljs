@@ -40,7 +40,9 @@ function collectRegistryNames(description, names = new Set()) {
 
   switch (description.kind) {
     case 'object':
-      for (const property of Array.isArray(description.properties) ? description.properties : [])
+      for (const property of Array.isArray(description.properties) ?
+        description.properties
+      : [])
         collectRegistryNames(property.contract, names);
       return names;
     case 'array':
@@ -83,7 +85,11 @@ function escapeCommentLine(line) {
   return String(line).replaceAll('*/', '*\\/');
 }
 
-function typeScriptExpression(description, registryNames = new Map(), depth = 0) {
+function typeScriptExpression(
+  description,
+  registryNames = new Map(),
+  depth = 0,
+) {
   if (!description) return 'unknown';
 
   switch (description.kind) {
@@ -135,8 +141,15 @@ function unionExpression(description, registryNames, depth) {
 function arrayExpression(description, registryNames, depth) {
   if (!description.element) return 'unknown[]';
 
-  const element = typeScriptExpression(description.element, registryNames, depth);
-  if (description.element.kind === 'union' || description.element.kind === 'object') {
+  const element = typeScriptExpression(
+    description.element,
+    registryNames,
+    depth,
+  );
+  if (
+    description.element.kind === 'union' ||
+    description.element.kind === 'object'
+  ) {
     return `Array<${element}>`;
   }
   return `${element}[]`;

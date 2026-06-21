@@ -13,9 +13,9 @@ export class SigilProjectionError extends Error {
 
 export function projectionError({ projection, path = [], reason, fallback }) {
   const message =
-    typeof fallback === 'string'
-      ? fallback
-      : `${projection} projection cannot represent this contract description accurately.`;
+    typeof fallback === 'string' ? fallback : (
+      `${projection} projection cannot represent this contract description accurately.`
+    );
 
   return new SigilProjectionError({
     message,
@@ -26,8 +26,9 @@ export function projectionError({ projection, path = [], reason, fallback }) {
 }
 
 export function unsupportedProjectionKind(projection, description, path = []) {
-  const kind = description && typeof description === 'object' && description.kind
-    ? description.kind
+  const kind =
+    description && typeof description === 'object' && description.kind ?
+      description.kind
     : typeof description;
 
   return new SigilProjectionError({

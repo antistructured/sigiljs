@@ -1,14 +1,16 @@
 # Testing Helpers
 
-SigilJS can generate deterministic fixtures and basic contract test cases from the same runtime contract.
+SigilJS includes stable built-in helpers for deterministic fixture and test-case generation.
 
-Future direction:
+`mock()` and `cases()` are part of the stable 0.4.0 public API. They are not experimental.
+
+Future direction for additional testing capabilities:
 
 ```txt
 @sigil/testing
 ```
 
-For now, `mock()` and `cases()` live in core while the testing API stabilizes.
+For now, `mock()` and `cases()` live in core.
 
 ## `mock()`
 

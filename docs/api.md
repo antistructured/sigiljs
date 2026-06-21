@@ -17,24 +17,36 @@ import {
 } from '@weipertda/sigiljs';
 ```
 
+**Stable (0.4.0):** `Sigil`, `sigil`, `sigil.exact`, `optional`, `union`, `oneOf`, `pipe`, `trim`, `realType`, contract methods (`check`, `assert`, `parse`, `safeParse`, `serialize`, `transform`, `withMetadata`, `version`, `describe`, `toJSONSchema`, `toTypeScript`, `toOpenAPI`, `diff`, `compile`, `mock`, `cases`), `SigilValidationError`, and constructor helpers (`Sigil.exact`, `Sigil.meta`, `Sigil.named` / `Sigil.define`, `Sigil.collection`).
+
+**Experimental (0.4.0):** `httpContract`, `toFormConstraints()`.
+
+Experimental APIs carry a warning in their documentation and may change before 1.0.0.
+
+> **Preferred API:** `sigil()` is the primary object-definition API. `Sigil`\`...\` is supported as an alternative template syntax. `S` and `T` are legacy aliases for `Sigil` and should not be used in new code.
+
 ## Public exports
 
-| Export | Purpose |
-||---------|
-| `Sigil` | Tagged-template contract factory. |
-| `sigil` | Plain JavaScript object-definition contract factory. |
-| `optional` | Helper to mark object-definition fields optional. |
-| `union` | Helper to create object-definition union contracts. |
-| `oneOf` | Helper to create literal union/enum-style contracts. |
-| `pipe` | Field-level transform composition helper. |
-| `trim` | String trimming transform helper for `pipe`. |
-| `httpContract` | Framework-neutral request/response boundary helper. |
-| `realType` | Runtime type detector for values. |
-| `SigilValidationError` | Structured error type for contract validation failures. |
+| Export | Status | Purpose |
+|---------|--------|---------|
+| `Sigil` | stable | Tagged-template contract factory. |
+| `S` | stable (legacy) | Legacy convenience alias for `Sigil`. |
+| `T` | stable (legacy) | Legacy convenience alias for `Sigil`. |
+| `sigil` | stable | Plain JavaScript object-definition contract factory. |
+| `optional` | stable | Helper to mark object-definition fields optional. |
+| `union` | stable | Helper to create object-definition union contracts. |
+| `oneOf` | stable | Helper to create literal union/enum-style contracts. |
+| `pipe` | stable | Field-level transform composition helper. |
+| `trim` | stable | String trimming transform helper for `pipe`. |
+| `httpContract` | experimental | Framework-neutral request/response boundary helper. |
+| `realType` | stable | Runtime type detector for values. |
+| `SigilValidationError` | stable | Structured error type for contract validation failures. |
 
 ## Define pillar
 
 ### `Sigil`
+
+**Status:** stable
 
 Tagged-template contract factory.
 
@@ -47,6 +59,8 @@ const User = Sigil`
 
 ### `Sigil.exact`
 
+**Status:** stable
+
 Exact-mode tagged-template factory that rejects extra object keys.
 
 ```js
@@ -57,6 +71,8 @@ const ExactUser = Sigil.exact`
 ```
 
 ### `Sigil.meta(metadata)`
+
+**Status:** stable
 
 Tagged-template helper that attaches optional metadata.
 
@@ -69,6 +85,8 @@ const User = Sigil.meta({ name: 'User', version: '1.0.0' })`
 
 ### `Sigil.define(name)` / `Sigil.named(name)`
 
+**Status:** stable
+
 Create globally registered named sigils.
 
 ```js
@@ -79,6 +97,8 @@ const User = Sigil`
 ```
 
 ### `Sigil.collection(definitions)`
+
+**Status:** stable
 
 Create grouped reusable sigils with local resolution.
 
@@ -94,6 +114,8 @@ const Auth = Sigil.collection({
 
 ### `sigil(definition, metadata?)`
 
+**Status:** stable
+
 Object-definition contract factory.
 
 ```js
@@ -107,6 +129,8 @@ const User = sigil({
 
 ### `sigil.exact(definition, metadata?)`
 
+**Status:** stable
+
 Exact-mode object-definition contract factory.
 
 ```js
@@ -117,6 +141,8 @@ const ExactUser = sigil.exact({
 ```
 
 ### `optional(definition)`
+
+**Status:** stable
 
 Mark an object-definition field optional.
 
@@ -129,6 +155,8 @@ const User = sigil({
 
 ### `union(...definitions)`
 
+**Status:** stable
+
 Create a primitive union in object-definition syntax.
 
 ```js
@@ -138,6 +166,8 @@ const Id = sigil({
 ```
 
 ### `oneOf(...values)`
+
+**Status:** stable
 
 Create a literal union in object-definition syntax.
 
@@ -149,6 +179,8 @@ const Role = sigil({
 
 ### `pipe(definition, ...transforms)`
 
+**Status:** stable
+
 Compose field transforms in object-definitions.
 
 ```js
@@ -158,6 +190,8 @@ const User = sigil({
 ```
 
 ### `trim()`
+
+**Status:** stable
 
 String trimming transform helper.
 
@@ -169,25 +203,25 @@ const cleanName = trim();
 
 Every contract object returned by `Sigil`, `sigil()`, or `sigil.exact()` shares this stable shape.
 
-| Method                   | Purpose                                                |
-| ------------------------ | ------------------------------------------------------ |
-| `check(value)`           | Returns `true` or `false`.                             |
-| `assert(value)`          | Returns trusted value or throws.                       |
-| `parse(value)`           | Returns trusted value or throws.                       |
-| `safeParse(value)`       | Returns `{ success, data }` or `{ success, error }`.   |
-| `serialize(value)`       | Validates trusted data for boundary output.            |
-| `transform(fn)`          | Returns a derived contract with a transform.           |
-| `withMetadata(metadata)` | Returns a derived contract with metadata.              |
-| `version(version)`       | Shorthand for version metadata only.                   |
-| `describe()`             | Returns stable contract description object.            |
-| `toJSONSchema()`         | Projects contract to JSON Schema.                      |
-| `toTypeScript(name)`     | Projects contract to a TypeScript type declaration.    |
-| `toOpenAPI()`            | Projects contract to an OpenAPI-compatible schema.     |
-| `toFormConstraints()`    | Projects basic form constraints for object contracts.  |
-| `mock()`                 | Returns a deterministic valid sample value.            |
-| `cases()`                | Returns deterministic `{ valid, invalid }` test cases. |
-| `diff(other)`            | Returns deterministic lifecycle diff entries.          |
-| `compile()`              | Returns the compiled boolean validator.                |
+| Method | Status | Purpose |
+|------|--------|---------|
+| `check(value)` | stable | Returns `true` or `false`. |
+| `assert(value)` | stable | Returns trusted value or throws. |
+| `parse(value)` | stable | Returns trusted value or throws. |
+| `safeParse(value)` | stable | Returns `{ success, data }` or `{ success, error }`. |
+| `serialize(value)` | stable | Validates trusted data for boundary output. |
+| `transform(fn)` | stable | Returns a derived contract with a transform. |
+| `withMetadata(metadata)` | stable | Returns a derived contract with metadata. |
+| `version(version)` | stable | Shorthand for version metadata only. |
+| `describe()` | stable | Returns stable contract description object. |
+| `toJSONSchema()` | stable | Projects contract to JSON Schema. |
+| `toTypeScript(name)` | stable | Projects contract to a TypeScript type declaration. |
+| `toOpenAPI()` | stable | Projects contract to an OpenAPI-compatible schema. |
+| `toFormConstraints()` | experimental | Projects basic form constraints for object contracts. |
+| `mock()` | stable | Returns a deterministic valid sample value. |
+| `cases()` | stable | Returns deterministic `{ valid, invalid }` test cases. |
+| `diff(other)` | stable | Returns deterministic lifecycle diff entries. |
+| `compile()` | stable | Returns the compiled boolean validator. |
 
 ### Contract lifecycle metadata
 
@@ -215,6 +249,8 @@ Metadata does not change runtime validation behavior.
 
 ### `contract.check(value)`
 
+**Status:** stable
+
 **Purpose:** fast boolean validation path.
 
 **Signature:** `check(value, options?) => boolean`
@@ -230,6 +266,8 @@ const valid = User.check({ name: 'D', role: 'admin' });
 **Throws:** never.
 
 ### `contract.assert(value)`
+
+**Status:** stable
 
 **Purpose:** validate and return trusted runtime data.
 
@@ -247,6 +285,8 @@ const trusted = User.assert(unknownInput);
 
 ### `contract.parse(value)`
 
+**Status:** stable
+
 **Purpose:** enforce contract semantics and return trusted runtime data.
 
 **Signature:** `parse(value, options?) => value`
@@ -262,6 +302,8 @@ const trusted = User.parse(unknownInput);
 **Throws:** `SigilValidationError` when invalid.
 
 ### `contract.safeParse(value)`
+
+**Status:** stable
 
 **Purpose:** validate without throwing.
 
@@ -285,6 +327,8 @@ const result = User.safeParse(unknownInput);
 
 ### `contract.serialize(value)`
 
+**Status:** stable
+
 **Purpose:** validate data for boundary-safe output.
 
 **Signature:** `serialize(value, options?) => value`
@@ -300,6 +344,8 @@ const output = User.serialize(trustedValue);
 **Throws:** `SigilValidationError` when invalid.
 
 ### `contract.transform(fn)`
+
+**Status:** stable
 
 **Purpose:** create a derived contract that transforms then revalidates.
 
@@ -320,6 +366,8 @@ const TrimmedUser = User.transform((user) => ({
 
 ### `contract.withMetadata(metadata)`
 
+**Status:** stable
+
 **Purpose:** create a derived contract with metadata.
 
 **Signature:** `withMetadata(metadata) => contract`
@@ -336,6 +384,8 @@ const VersionedUser = User.withMetadata({ version: '2.0.0' });
 
 ### `contract.version(version)`
 
+**Status:** stable
+
 **Purpose:** shorthand metadata-only versioning.
 
 **Signature:** `version(version) => contract`
@@ -351,6 +401,8 @@ const VersionedUser = User.version('2.0.0');
 **Throws:** never.
 
 ### `contract.describe()`
+
+**Status:** stable
 
 **Purpose:** return the stable public contract description.
 
@@ -376,6 +428,8 @@ User.describe();
 
 ### `contract.toJSONSchema()`
 
+**Status:** stable
+
 **Purpose:** project the contract description to JSON Schema.
 
 **Signature:** `toJSONSchema() => object`
@@ -391,6 +445,8 @@ User.toJSONSchema();
 **Throws:** never.
 
 ### `contract.toTypeScript(name)`
+
+**Status:** stable
 
 **Purpose:** project the contract description to a TypeScript type declaration.
 
@@ -415,6 +471,8 @@ type User = {
 
 ### `contract.toOpenAPI()`
 
+**Status:** stable
+
 **Purpose:** project the contract to an OpenAPI-compatible schema.
 
 **Signature:** `toOpenAPI() => object`
@@ -431,9 +489,11 @@ User.toOpenAPI();
 
 ### `contract.toFormConstraints()`
 
-**Purpose:** project basic object contracts to form metadata.
+**Status:** experimental
 
-**Status:** experimental.
+Experimental. May change before 1.0.0.
+
+**Purpose:** project basic object contracts to form metadata.
 
 **Signature:** `toFormConstraints() => object`
 
@@ -448,6 +508,8 @@ User.toFormConstraints();
 **Throws:** never.
 
 ### `contract.mock()`
+
+**Status:** stable
 
 **Purpose:** generate a deterministic valid sample value.
 
@@ -464,6 +526,8 @@ User.mock();
 **Throws:** never.
 
 ### `contract.cases()`
+
+**Status:** stable
 
 **Purpose:** return deterministic valid/invalid contract test cases.
 
@@ -488,6 +552,8 @@ User.cases();
 
 ### `contract.diff(other)`
 
+**Status:** stable
+
 **Purpose:** compare contracts for lifecycle drift.
 
 **Signature:** `diff(other) => change[]`
@@ -511,6 +577,8 @@ const changes = NextUser.diff(PreviousUser);
 
 ### `contract.compile()`
 
+**Status:** stable
+
 **Purpose:** expose the compiled validator.
 
 **Signature:** `compile() => function`
@@ -530,6 +598,8 @@ const ok = validate(data);
 
 ### `realType(value)`
 
+**Status:** stable
+
 **Purpose:** inspect a runtime value as a simple type label.
 
 **Signature:** `realType(value, options?) => string`
@@ -546,6 +616,10 @@ realType([]); // 'array'
 **Throws:** never.
 
 ### `httpContract({ request, response })`
+
+**Status:** experimental
+
+Experimental. May change before 1.0.0.
 
 **Purpose:** framework-neutral request/response boundary helper.
 
@@ -567,6 +641,8 @@ const { parseRequest, serializeResponse } = httpContract({
 ## Error shape
 
 ### `SigilValidationError`
+
+**Status:** stable
 
 Thrown by `assert()` and `parse()` on invalid input.
 

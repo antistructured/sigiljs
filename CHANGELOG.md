@@ -1,41 +1,31 @@
 # Changelog
 
-## 0.3.0
+All notable changes to `@weipertda/sigiljs` are documented here.
 
-### Added
-
-- Published package as `@weipertda/sigiljs`
-- CLI contract workflows (`check`, `parse`, `safe-parse`, `describe`, `json-schema`, `types`, `openapi`, `mock`, `diff`)
-- File-based `.sigil` and `.json` workflows
-- Projection commands in code and CLI
-- Contract diff workflow
-- Category demo
-
-### Changed
-
-- Updated public positioning around executable data contracts
-- Improved CLI output for human and `--json` automation modes
-
-### Notes
-
-- Package remains a single package.
-- Future `@sigil/*` package split is deferred until projection APIs stabilize.
+This format follows [semantic-release](https://semantic-release.gitbook.io/) conventions adapted for manual maintenance.
 
 ## 0.4.0
 
 ### Added
 
-- Projection error handling with structured `SigilProjectionError` output
-- Projection snapshot tests for JSON Schema, TypeScript, and OpenAPI outputs
-- Internal projection module separation
+- Public API stability classification for all exported symbols.
+- `docs/internal/public-export-audit.md` enumerating every public and internal export.
+- `docs/internal/projection-api-freeze.md` documenting projection input/output contracts, determinism, and error behavior.
+- `docs/experimental.md` index of experimental APIs.
 
 ### Changed
 
-- Hardened JSON Schema projection behavior
-- Hardened TypeScript projection behavior
-- Hardened OpenAPI projection behavior
+- `docs/api.md` now includes a stable vs. experimental status table for exports, contract methods, utilities, and error types.
+- `docs/sigils.md` restructured to present `sigil()` as the primary API, `Sigil`\`...\` as the template alternative, and `S`/`T` as legacy aliases.
+- `docs/projections.md` expanded to cover `describe()`, `toJSONSchema()`, `toTypeScript(name)`, and `toOpenAPI()` with explicit behavior contracts.
+- `docs/projections/testing.md` updated to document `mock()` and `cases()` as stable helpers.
+- `docs/projections/forms.md` marked experimental with an explicit stability warning.
+- `docs/projections/http.md` marked experimental with an explicit stability warning.
+- `docs/api.md` marks `httpContract` and `toFormConstraints()` as **Experimental. May change before 1.0.0.**
 
 ### Notes
 
-- Package remains a single package.
-- Projection extraction readiness report documents when `@sigil/*` separation may become appropriate.
+- Package name remains `@weipertda/sigiljs`. No package split.
+- `mock()` and `cases()` are stable in 0.4.0 because their tests and docs are strong. Additional testing helpers remain future `@sigil/testing` scope.
+- `httpContract()` is exported intentionally but is not yet validated as a stable public boundary.
+- `toFormConstraints()` is exported intentionally but is still experimental.
