@@ -1,32 +1,142 @@
 # SigilJS Docs
 
-Start here if you are new to SigilJS:
+Executable data contracts for JavaScript runtime boundaries.
 
-1. [Introduction](introduction.md)
-2. [Quickstart](quickstart.md)
-3. [Sigils](sigils.md)
-4. [Exact Mode](exact-mode.md)
-5. [Named Sigils](named-sigils.md)
-6. [realType](realtype.md)
-7. [SigilJS vs Zod](sigil-vs-zod.md)
-8. [Roadmap](roadmap.md)
-9. [v1 Readiness](v1-readiness.md)
-10. [Package Split Policy](package-split.md)
-11. [Package Split Readiness Report](package-split-readiness.md)
-12. [JSON Schema Projection](projections/json-schema.md)
-13. [OpenAPI Projection](projections/openapi.md)
-14. [Forms Projection](projections/forms.md)
-15. [AI Structured Output Contracts](projections/ai-structured-output.md)
-16. [HTTP Boundary Helpers](projections/http.md)
-17. [Testing Helpers](projections/testing.md)
-18. [Contract Lifecycle](projections/lifecycle.md)
-19. [Boundary Contract Recipes](recipes/index.md)
+---
 
-Additional references:
+## Getting started
 
-- [Core API Audit](core-api-audit.md)
-- [Internal Contract Model](internal/contract-model.md)
-- [CLI](cli.md)
+- [Introduction](introduction.md) — what SigilJS is and why it exists
+- [Quickstart](quickstart.md) — install and first contract
+- [Sigils](sigils.md) — contract objects in depth
+- [Exact Mode](exact-mode.md) — strict field validation
+- [Public API Reference](api.md) — full stable + experimental API
+- [Stability Map](stability.md) — what's stable, what's experimental
+- [Known Limitations](known-limitations.md) — honest constraints
+
+---
+
+## Core API
+
+- [Public API Reference](api.md)
+- [Objects](objects.md)
+- [Optional fields](optional.md)
+- [Arrays](arrays.md)
+- [Named Sigils](named-sigils.md)
+- [realType](realtype.md)
+- [Exact Mode](exact-mode.md)
 - [Compiled Validators](compiled-validators.md)
-- [Examples](examples.md)
-- [Contributing](contributing.md)
+
+---
+
+## Projections
+
+- [Projections overview](projections.md)
+- [JSON Schema](projections/json-schema.md)
+- [OpenAPI](projections/openapi.md)
+- [TypeScript](projections/typescript.md)
+- [Forms Projection](projections/forms.md)
+- [Testing Helpers](projections/testing.md)
+- [Contract Lifecycle](projections/lifecycle.md)
+
+---
+
+## Testing / Prove
+
+- [Contract-Driven Testing](testing.md)
+- [Testing Helpers](projections/testing.md)
+
+---
+
+## Boundaries
+
+- [API boundaries](boundaries/api.md)
+- [Database boundaries](boundaries/database.md)
+- [Form boundaries](boundaries/forms.md)
+- [AI boundaries](boundaries/ai.md)
+- [Config boundaries](boundaries/config.md)
+- [Webhook boundaries](boundaries/webhooks.md)
+- [Queue boundaries](boundaries/queues.md)
+- [Event boundaries](boundaries/events.md)
+- [Local storage boundaries](boundaries/local-storage.md)
+- [Plugin boundaries](boundaries/plugins.md)
+- [Boundary recipes](recipes/index.md)
+
+---
+
+## HTTP
+
+- [HTTP Boundary Helpers](projections/http.md) — experimental
+- [HTTP Boundary Docs](http/) *(see projections/http.md)*
+
+---
+
+## Forms
+
+- [Form Contracts](forms/form-contracts.md)
+- [Form Constraints Projection](forms/form-constraints.md)
+- [Form Validation](forms/form-validation.md)
+- [Form Testing](forms/form-testing.md)
+- [Forms Projection](projections/forms.md)
+
+---
+
+## Database
+
+- [Record Contracts](database/record-contracts.md)
+- [Insert Contracts](database/insert-contracts.md)
+- [Update Contracts](database/update-contracts.md)
+- [Persistence Diffs](database/persistence-diffs.md)
+- [Database Testing](database/database-testing.md)
+
+---
+
+## AI
+
+- [AI Structured Output Contracts](projections/ai-structured-output.md)
+- [AI Tool Calls](ai/tool-calls.md)
+- [AI Repair Loop](ai/repair-loop.md)
+- [AI Boundaries](boundaries/ai.md)
+
+---
+
+## CLI
+
+- [CLI Reference](cli.md)
+- [CLI Overview](cli/overview.md)
+- [Contract Files](cli/contract-files.md)
+- [Projections](cli/projections.md)
+- [Validation](cli/validation.md)
+- [Prove](cli/prove.md)
+- [Diff](cli/diff.md)
+
+---
+
+## Experimental APIs
+
+- [Experimental APIs](experimental.md)
+- [HTTP helpers](projections/http.md)
+- [Form constraints](projections/forms.md)
+- [CLI workflows](cli/overview.md)
+
+---
+
+## Package policy
+
+- [SigilJS vs Zod](sigil-vs-zod.md)
+- [Package Split Policy](package-split.md)
+- [v1 Readiness](v1-readiness.md)
+
+---
+
+## Internal reports
+
+Internal docs live in [`docs/internal/`](internal/) and are not public API references. They record design decisions, audit results, and readiness reports.
+
+Key internal documents:
+- [Public API Audit](internal/public-export-audit.md)
+- [Projection Boundary Audit](internal/projection-boundary-audit.md)
+- [Database Boundary Model](internal/database-boundary-model.md)
+- [HTTP Contract Decisions](internal/http-contract-stabilization-decision.md)
+- [Forms Extraction Readiness](internal/forms-extraction-readiness.md)
+- [CLI Extraction Readiness](internal/cli-extraction-readiness.md)

@@ -9,7 +9,7 @@ Config files and environment-derived objects are unknown data at startup. Enforc
 ## 2. Sigil contract
 
 ```js
-import { oneOf, sigil } from 'sigil';
+import { oneOf, sigil } from '@weipertda/sigiljs';
 
 const AppConfig = sigil.exact({
   env: oneOf('development', 'staging', 'production'),

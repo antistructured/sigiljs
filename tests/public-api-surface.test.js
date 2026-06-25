@@ -68,6 +68,7 @@ describe('Public API surface', () => {
     expect(typeof User.toFormConstraints).toBe('function');
     expect(typeof User.mock).toBe('function');
     expect(typeof User.cases).toBe('function');
+    expect(typeof User.test).toBe('function');
     expect(typeof User.diff).toBe('function');
     expect(typeof User.compile).toBe('function');
   });

@@ -9,7 +9,7 @@ Webhook payloads are unknown data from another system. Verify signatures first, 
 ## 2. Sigil contract
 
 ```js
-import { oneOf, sigil } from 'sigil';
+import { oneOf, sigil } from '@weipertda/sigiljs';
 
 const BillingWebhook = sigil.exact({
   provider: oneOf('stripe'),

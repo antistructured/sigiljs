@@ -1,9 +1,10 @@
 {
   "name": "@weipertda/sigiljs",
-  "version": "0.4.0",
-  "description": "Executable data contracts for JavaScript",
+  "version": "0.10.0",
+  "description": "Executable data contracts for JavaScript runtime boundaries.",
   "keywords": [
     "bun",
+    "cli",
     "contracts",
     "data-contracts",
     "executable-contracts",
@@ -12,6 +13,7 @@
     "openapi",
     "runtime",
     "runtime-contracts",
+    "runtime-validation",
     "schema",
     "sigil",
     "type-checking",

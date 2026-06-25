@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { file } from 'bun';
+import { file, write } from 'bun';
 import { basename } from 'node:path';
 import { T } from './index.js';
 
@@ -11,7 +11,10 @@ const COMMANDS = new Set([
   'json-schema',
   'types',
   'openapi',
+  'form',
   'mock',
+  'cases',
+  'test',
   'diff',
 ]);
 const args = process.argv.slice(2);
@@ -39,7 +42,7 @@ function printHelp() {
 
 Executable data contracts for JavaScript.
 
-Usage: sigil <command> <contract-file> [data-file]
+Usage: sigil <command> <contract-file> [data-file] [options]
 
 Commands:
   check       Validate JSON data and print human-readable success/failure
@@ -49,15 +52,31 @@ Commands:
   json-schema Print the JSON Schema projection
   types       Print a TypeScript type declaration
   openapi     Print the OpenAPI-compatible projection
+  form        Print the form constraint projection
   mock        Print deterministic valid sample data
+  cases       Print generated valid and invalid test cases
+  test        Print a contract self-test report
   diff        Compare two contract files
+
+Options:
+  --json        Output as machine-readable JSON (check, parse, diff)
+  --export <N>  Use a named export from a .sigil.js module (default: default)
+  --out <path>  Write output to a file instead of stdout
+
+Contract files:
+  .sigil files      Sigil type expressions (e.g. { id: number, name: string })
+  .sigil.js files   JS modules with a default or named Sigil contract export
 
 Examples:
   sigil check contracts/user.sigil data/user.json
+  sigil check contracts/user.sigil.js data/user.json
   sigil parse contracts/user.sigil data/user.json --json
   sigil types contracts/user.sigil User
   sigil json-schema contracts/user.sigil
+  sigil form contracts/user.sigil.js
+  sigil cases contracts/user.sigil.js
   sigil diff contracts/user-v1.sigil contracts/user-v2.sigil
+  sigil describe contracts/user.sigil.js --export User
 `);
 }
 
@@ -73,22 +92,31 @@ async function runCommand(command, args) {
         await runParse(options.args, options);
         return;
       case 'safe-parse':
-        await runSafeParse(options.args);
+        await runSafeParse(options.args, options);
         return;
       case 'describe':
-        await runProjection(options.args, (sigil) => sigil.describe());
+        await runProjection(options.args, (c) => c.describe(), options);
         return;
       case 'json-schema':
-        await runProjection(options.args, (sigil) => sigil.toJSONSchema());
+        await runProjection(options.args, (c) => c.toJSONSchema(), options);
         return;
       case 'types':
-        await runTypes(options.args);
+        await runTypes(options.args, options);
         return;
       case 'openapi':
-        await runProjection(options.args, (sigil) => sigil.toOpenAPI());
+        await runProjection(options.args, (sigil) => sigil.toOpenAPI(), options);
+        return;
+      case 'form':
+        await runProjection(options.args, (sigil) => sigil.toFormConstraints(), options);
         return;
       case 'mock':
-        await runProjection(options.args, (sigil) => sigil.mock());
+        await runProjection(options.args, (sigil) => sigil.mock(), options);
+        return;
+      case 'cases':
+        await runCases(options.args, options);
+        return;
+      case 'test':
+        await runTest(options.args, options);
         return;
       case 'diff':
         await runDiff(options.args, options);
@@ -101,9 +129,24 @@ async function runCommand(command, args) {
 }
 
 function parseCommandOptions(args) {
+  const exportIdx = args.indexOf('--export');
+  const exportName = exportIdx !== -1 ? args[exportIdx + 1] : null;
+  const outIdx = args.indexOf('--out');
+  const outPath = outIdx !== -1 ? args[outIdx + 1] : null;
+
+  const flags = new Set(['--json', '--export', '--out']);
+  const filtered = args.filter((arg, i) => {
+    if (flags.has(arg)) return false;
+    if (i > 0 && (args[i - 1] === '--export' || args[i - 1] === '--out'))
+      return false;
+    return true;
+  });
+
   return {
     json: args.includes('--json'),
-    args: args.filter((arg) => arg !== '--json'),
+    exportName,
+    outPath,
+    args: filtered,
   };
 }
 
@@ -113,11 +156,11 @@ async function runCheck(args, options) {
     failUsage('Usage: sigil check schema.sigil data.json');
   }
 
-  const sigil = await readSigil(schemaPath);
+  const contract = await readSigil(schemaPath, options);
   const value = await readJSON(dataPath);
 
   try {
-    sigil.assert(value);
+    contract.assert(value);
     printCheckSuccess(schemaPath, dataPath, options);
     process.exit(0);
   } catch (error) {
@@ -132,11 +175,11 @@ async function runParse(args, options) {
     failUsage('Usage: sigil parse schema.sigil data.json');
   }
 
-  const sigil = await readSigil(schemaPath);
+  const contract = await readSigil(schemaPath, options);
   const value = await readJSON(dataPath);
 
   try {
-    console.log(JSON.stringify(sigil.parse(value), null, 2));
+    console.log(JSON.stringify(contract.parse(value), null, 2));
     process.exit(0);
   } catch (error) {
     printCommandError(error, options);
@@ -144,33 +187,63 @@ async function runParse(args, options) {
   }
 }
 
-async function runSafeParse(args) {
+async function runSafeParse(args, options = {}) {
   const [schemaPath, dataPath] = args;
   if (!schemaPath || !dataPath) {
     failUsage('Usage: sigil safe-parse schema.sigil data.json');
   }
 
-  const sigil = await readSigil(schemaPath);
+  const contract = await readSigil(schemaPath, options);
   const value = await readJSON(dataPath);
-  const result = sigil.safeParse(value);
+  const result = contract.safeParse(value);
 
   console.log(JSON.stringify(serializeResult(result), null, 2));
 }
 
-async function runProjection(args, project) {
+async function runProjection(args, project, options = {}) {
   const [schemaPath] = args;
   if (!schemaPath) failUsage('Usage: sigil <command> schema.sigil');
 
-  const sigil = await readSigil(schemaPath);
-  console.log(JSON.stringify(project(sigil), null, 2));
+  const contract = await readSigil(schemaPath, options);
+  const output = JSON.stringify(project(contract), null, 2);
+  await writeOutput(output, options);
 }
 
-async function runTypes(args) {
+async function runCases(args, options) {
+  const [schemaPath] = args;
+  if (!schemaPath) failUsage('Usage: sigil cases schema.sigil');
+
+  const contract = await readSigil(schemaPath, options);
+  const output = JSON.stringify(contract.cases(), null, 2);
+  await writeOutput(output, options);
+}
+
+async function runTest(args, options) {
+  const [schemaPath] = args;
+  if (!schemaPath) failUsage('Usage: sigil test schema.sigil');
+
+  const contract = await readSigil(schemaPath, options);
+  // Run self-test with generated cases
+  const generatedCases = contract.cases();
+  const report = contract.test(generatedCases);
+  const output = JSON.stringify(report, null, 2);
+  await writeOutput(output, options);
+}
+
+async function writeOutput(text, options = {}) {
+  if (options.outPath) {
+    await write(options.outPath, text + '\n');
+  } else {
+    console.log(text);
+  }
+}
+
+async function runTypes(args, options = {}) {
   const [schemaPath, explicitName] = args;
   if (!schemaPath) failUsage('Usage: sigil types schema.sigil [Name]');
 
-  const sigil = await readSigil(schemaPath);
-  console.log(sigil.toTypeScript(explicitName ?? typeNameFromPath(schemaPath)));
+  const contract = await readSigil(schemaPath, options);
+  console.log(contract.toTypeScript(explicitName ?? typeNameFromPath(schemaPath)));
 }
 
 async function runDiff(args, options) {
@@ -179,8 +252,8 @@ async function runDiff(args, options) {
     failUsage('Usage: sigil diff before.sigil after.sigil');
   }
 
-  const before = await readSigil(beforePath);
-  const after = await readSigil(afterPath);
+  const before = await readSigil(beforePath, options);
+  const after = await readSigil(afterPath, options);
   const changes = after.diff(before);
 
   if (options.json) {
@@ -229,7 +302,12 @@ function runLegacyPlayground(args) {
   }
 }
 
-async function readSigil(path) {
+async function readSigil(path, options = {}) {
+  // Auto-detect JS module files by extension
+  if (path.endsWith('.js') || path.endsWith('.mjs')) {
+    return readSigilModule(path, options);
+  }
+
   const source = await readTextFile(path, 'Contract');
 
   try {
@@ -237,6 +315,62 @@ async function readSigil(path) {
   } catch (error) {
     throw new Error(`Invalid Sigil contract in ${path}: ${error.message}`);
   }
+}
+
+/**
+ * Load a Sigil contract from a JS module file.
+ * Supports `export default` and named exports via --export <name>.
+ */
+async function readSigilModule(path, options = {}) {
+  const resolved = new URL(path, `file://${process.cwd()}/`).href;
+
+  let mod;
+  try {
+    mod = await import(resolved);
+  } catch (error) {
+    if (isMissingFileError(error) || error?.message?.includes('Cannot find module')) {
+      throw new Error(`Contract file not found: ${path}`);
+    }
+    throw new Error(`Failed to load contract module ${path}: ${error.message}`);
+  }
+
+  const exportName = options.exportName;
+
+  if (exportName) {
+    if (!Object.hasOwn(mod, exportName)) {
+      throw new Error(
+        `Named export '${exportName}' not found in ${path}. Available exports: ${Object.keys(mod).join(', ')}`,
+      );
+    }
+    return assertSigilContract(mod[exportName], path, exportName);
+  }
+
+  if (mod.default !== undefined) {
+    return assertSigilContract(mod.default, path, 'default');
+  }
+
+  const named = Object.keys(mod).filter((k) => k !== 'default');
+  if (named.length === 1) {
+    return assertSigilContract(mod[named[0]], path, named[0]);
+  }
+
+  throw new Error(
+    `No default export found in ${path}. Use --export <name> to select a named export. Available: ${Object.keys(mod).join(', ')}`,
+  );
+}
+
+function assertSigilContract(value, path, exportName) {
+  if (
+    value &&
+    typeof value === 'object' &&
+    typeof value.parse === 'function' &&
+    typeof value.safeParse === 'function'
+  ) {
+    return value;
+  }
+  throw new Error(
+    `Export '${exportName}' in ${path} is not a Sigil contract. Make sure it is created with sigil() or sigil.exact().`,
+  );
 }
 
 async function readJSON(path) {

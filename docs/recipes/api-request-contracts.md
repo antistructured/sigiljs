@@ -9,7 +9,7 @@ An API handler receives unknown data from the network. Before application code u
 ## 2. Sigil contract
 
 ```js
-import { oneOf, sigil } from 'sigil';
+import { oneOf, sigil } from '@weipertda/sigiljs';
 
 const CreateUserRequest = sigil.exact({
   method: oneOf('POST'),

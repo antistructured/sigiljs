@@ -9,7 +9,7 @@ Application events often cross module, process, or browser boundaries. Treat eve
 ## 2. Sigil contract
 
 ```js
-import { oneOf, sigil } from 'sigil';
+import { oneOf, sigil } from '@weipertda/sigiljs';
 
 const UserEvent = sigil.exact({
   type: oneOf('user.created', 'user.updated'),

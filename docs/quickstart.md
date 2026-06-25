@@ -3,94 +3,97 @@
 ## Install
 
 ```bash
-bun add sigil
+npm install @weipertda/sigiljs
 ```
 
 or:
 
 ```bash
-npm install sigil
+bun add @weipertda/sigiljs
 ```
 
-## Your first sigil
+## Your first contract
 
-A sigil is an executable contract object. Start with a tiny contract, then use it to turn unknown data into trusted runtime data at a boundary.
-
-```js
-import { Sigil } from 'sigil';
-
-const Name = Sigil`string`;
-
-Name.check('Dana'); // true
-Name.check(42); // false
-```
-
-## Objects
-
-Template syntax:
+A sigil is an executable contract object. Define structure once, then use it to turn unknown runtime data into trusted data at a boundary.
 
 ```js
-const User = Sigil`
-{
-  name: string
-  age?: number
-  tags: string[]
-}
-`;
-```
+import { oneOf, optional, sigil } from '@weipertda/sigiljs';
 
-Plain JavaScript syntax:
-
-```js
-import { sigil, optional } from 'sigil';
-
-const User = sigil({
-  name: String,
+const User = sigil.exact({
+  id: String,
+  email: String,
+  role: oneOf('admin', 'user'),
   age: optional(Number),
-  tags: Array,
 });
 
-User.check({
-  name: 'Dana',
-  tags: ['admin', 'editor'],
-}); // true
+// Validate unknown data
+const result = User.safeParse(unknownInput);
+
+if (result.success) {
+  console.log(result.data.role); // 'admin' | 'user' — verified
+} else {
+  console.error(result.error.message);
+  console.error(result.error.path); // ['role'] — path to the failing field
+}
 ```
 
-`?` marks an optional property in template syntax. `optional()` marks an optional property in object syntax. `[]` marks an array in template syntax; `Array` maps to the runtime array contract in object syntax.
+## Boolean checks
 
-## Boolean checks vs diagnostics
-
-Use `.check(value)` when you only need true or false on a hot path:
+Use `check()` when you only need true or false:
 
 ```js
-User.check(data);
+User.check(data); // boolean
 ```
 
-Use `.assert(value)` when you want useful failure details while enforcing a boundary:
+## Throwing checks
+
+Use `parse()` when you want to throw on invalid data:
 
 ```js
 try {
-  User.assert({ name: 'Dana', age: 'old', tags: [] });
+  const trusted = User.parse(unknownInput);
 } catch (error) {
-  console.log(error.message); // Expected property "age" to be number, got string
-  console.log(error.path); // ['age']
-  console.log(error.expected); // number
-  console.log(error.actual); // string
+  console.log(error.message); // Expected property "role" to be "admin" | "user", got superuser
+  console.log(error.path);    // ['role']
 }
 ```
 
-## CLI smoke test
+## Projection
+
+Project the contract into JSON Schema, TypeScript, or OpenAPI:
+
+```js
+User.toJSONSchema();
+User.toTypeScript('User');
+User.toOpenAPI();
+```
+
+## Mock data
+
+Generate a valid sample fixture:
+
+```js
+const sample = User.mock({ seed: 1 });
+// { id: 'string', email: 'string', role: 'admin' }
+
+// The fixture is always valid
+User.parse(sample); // no throw
+```
+
+## CLI
+
+Validate a JSON file from the terminal:
 
 ```bash
-bun run src/playground.js '{"name":"D"}' '{ name: string }'
+sigil check contracts/user.sigil data/user.json
 ```
 
-Output:
+From this repository before installing:
 
-```text
-Sigil: { name: string }
-Value: { "name": "D" }
-Result: valid
+```bash
+bun run src/playground.js check examples/workflows/cli-check-api-response/contract.sigil examples/workflows/cli-check-api-response/valid.json
 ```
 
-Next: [Sigils](sigils.md).
+---
+
+Next: [Sigils](sigils.md) · [Public API](api.md) · [Stability Map](stability.md)

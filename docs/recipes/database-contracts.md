@@ -9,7 +9,7 @@ Rows from a database adapter are runtime data crossing a system boundary. Treat 
 ## 2. Sigil contract
 
 ```js
-import { optional, sigil } from 'sigil';
+import { optional, sigil } from '@weipertda/sigiljs';
 
 const TicketRow = sigil.exact({
   id: Number,

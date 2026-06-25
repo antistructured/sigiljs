@@ -9,7 +9,7 @@ Browser local storage is user-controlled unknown data. Enforce an executable con
 ## 2. Sigil contract
 
 ```js
-import { oneOf, optional, sigil } from 'sigil';
+import { oneOf, optional, sigil } from '@weipertda/sigiljs';
 
 const StoredSession = sigil.exact({
   userId: String,

@@ -9,7 +9,7 @@ A queue worker receives unknown data that may have been produced by another serv
 ## 2. Sigil contract
 
 ```js
-import { oneOf, sigil } from 'sigil';
+import { oneOf, sigil } from '@weipertda/sigiljs';
 
 const QueueJob = sigil.exact({
   jobId: String,

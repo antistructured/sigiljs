@@ -1,6 +1,16 @@
+/**
+ * HTTP Request Contract Example
+ *
+ * Demonstrates httpContract() for validating API request parts:
+ * body, params, query, and headers — all as plain objects.
+ *
+ * No framework required. No network calls.
+ */
 import { httpContract, oneOf, optional, sigil } from '../src/index.js';
 
-const CreateUserRequest = sigil.exact({
+// --- Define contracts for each request part ---
+
+const CreateUserBody = sigil.exact({
   email: String,
   name: String,
   role: oneOf('admin', 'user'),
@@ -14,22 +24,51 @@ const CreateUserResponse = sigil.exact({
   role: oneOf('admin', 'user'),
 });
 
+// --- Define the route contract ---
+
 const CreateUser = httpContract({
-  request: CreateUserRequest,
+  method: 'POST',
+  path: '/users',
+  summary: 'Create a new user',
+  operationId: 'createUser',
+  request: CreateUserBody,
   response: CreateUserResponse,
+  responses: {
+    201: CreateUserResponse,
+    400: sigil.exact({ code: String, message: String }),
+  },
 });
 
-const requestBody = {
-  email: 'dana@example.com',
-  name: 'Dana',
-  role: 'user',
+// --- Parse an incoming request body ---
+
+const incomingRequest = {
+  body: {
+    email: 'dana@example.com',
+    name: 'Dana',
+    role: 'user',
+  },
 };
 
-const trustedRequest = CreateUser.parseRequest(requestBody);
-const openapiOperation = CreateUser.toOpenAPI();
+const trustedRequest = CreateUser.parseRequest(incomingRequest);
+console.log('Trusted body:', trustedRequest.body);
 
-console.log('HTTP request accepted:', trustedRequest.email);
-console.log(
-  'HTTP request OpenAPI:',
-  JSON.stringify(openapiOperation.requestBody, null, 2),
-);
+// --- Safe parse (never throws) ---
+
+const badRequest = {
+  body: { email: 'not-an-email', role: 'superadmin' }, // invalid role
+};
+
+const safeResult = CreateUser.safeParseRequest(badRequest);
+console.log('Safe parse success:', safeResult.success); // false
+
+// --- OpenAPI projection ---
+
+const openapiOperation = CreateUser.toOpenAPI();
+console.log('OpenAPI requestBody schema type:', openapiOperation.requestBody.content['application/json'].schema.type);
+
+// --- Path item (OpenAPI-compatible) ---
+
+const pathItem = CreateUser.toPathItem();
+console.log('OpenAPI path item paths:', Object.keys(pathItem)); // ['/users']
+console.log('OpenAPI operation methods:', Object.keys(pathItem['/users'])); // ['post']
+console.log('OpenAPI operationId:', pathItem['/users']['post'].operationId);

@@ -337,7 +337,7 @@ describe('Phase 14 CLI foundation', () => {
 
     expect(exitCode).toBe(0);
     expect(JSON.parse(stdout.toString())).toEqual({
-      id: 1,
+      id: 0,
       name: 'string',
     });
   });

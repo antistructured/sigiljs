@@ -9,13 +9,21 @@ describe('Phase 9 Forms projection', () => {
     });
 
     expect(User.toFormConstraints()).toEqual({
-      name: {
-        required: true,
-        type: 'text',
-      },
-      age: {
-        required: false,
-        type: 'number',
+      fields: {
+        name: {
+          name: 'name',
+          path: ['name'],
+          required: true,
+          label: 'Name',
+          type: 'text',
+        },
+        age: {
+          name: 'age',
+          path: ['age'],
+          required: false,
+          label: 'Age',
+          type: 'number',
+        },
       },
     });
   });
@@ -28,18 +36,29 @@ describe('Phase 9 Forms projection', () => {
     });
 
     expect(Signup.toFormConstraints()).toEqual({
-      email: {
-        required: true,
-        type: 'text',
-      },
-      newsletter: {
-        required: true,
-        type: 'checkbox',
-      },
-      role: {
-        required: true,
-        type: 'select',
-        options: ['admin', 'user'],
+      fields: {
+        email: {
+          name: 'email',
+          path: ['email'],
+          required: true,
+          label: 'Email',
+          type: 'text',
+        },
+        newsletter: {
+          name: 'newsletter',
+          path: ['newsletter'],
+          required: true,
+          label: 'Newsletter',
+          type: 'checkbox',
+        },
+        role: {
+          name: 'role',
+          path: ['role'],
+          required: true,
+          label: 'Role',
+          type: 'select',
+          options: ['admin', 'user'],
+        },
       },
     });
   });
@@ -50,27 +69,37 @@ describe('Phase 9 Forms projection', () => {
     });
 
     expect(Search.toFormConstraints()).toEqual({
-      id: {
-        required: true,
-        type: 'text',
-        accepts: ['text', 'number'],
+      fields: {
+        id: {
+          name: 'id',
+          path: ['id'],
+          required: true,
+          label: 'Id',
+          type: 'text',
+          accepts: ['text', 'number'],
+        },
       },
     });
   });
 
-  test('returns an empty constraint map for non-object contracts', () => {
-    expect(sigil(String).toFormConstraints()).toEqual({});
+  test('returns an empty fields map for non-object contracts', () => {
+    expect(sigil(String).toFormConstraints()).toEqual({ fields: {} });
   });
 
   test('returns a fresh constraint map each call', () => {
     const User = sigil({ name: String });
     const first = User.toFormConstraints();
-    first.name.type = 'number';
+    first.fields.name.type = 'number';
 
     expect(User.toFormConstraints()).toEqual({
-      name: {
-        required: true,
-        type: 'text',
+      fields: {
+        name: {
+          name: 'name',
+          path: ['name'],
+          required: true,
+          label: 'Name',
+          type: 'text',
+        },
       },
     });
   });

@@ -9,7 +9,7 @@ AI structured output is unknown data from a probabilistic system boundary. Use a
 ## 2. Sigil contract
 
 ```js
-import { oneOf, sigil } from 'sigil';
+import { oneOf, sigil } from '@weipertda/sigiljs';
 
 const LeadIntent = sigil.exact({
   name: String,
@@ -19,18 +19,32 @@ const LeadIntent = sigil.exact({
 });
 ```
 
-## 3. Unknown input
+## 3. Simulated model output
+
+SigilJS does not call the model. It validates the output your application receives.
 
 ```js
-const llmOutput = await model.generateObject({
-  projection: LeadIntent.toJSONSchema(),
-});
+// In your application, model output arrives as unknown data from an API call.
+// Here we simulate it as a plain object for this recipe.
+const simulatedModelOutput = {
+  name: 'Alex Kim',
+  email: 'alex@example.com',
+  urgency: 'high',
+  summary: 'Needs enterprise pricing for a 200-seat rollout.',
+};
+```
+
+Use `toJSONSchema()` to build the schema you pass to the provider's structured-output API:
+
+```js
+const outputSchema = LeadIntent.toJSONSchema();
+// Pass outputSchema to your LLM provider's structured output configuration
 ```
 
 ## 4. Enforcement using parse/safeParse/assert
 
 ```js
-const result = LeadIntent.safeParse(llmOutput);
+const result = LeadIntent.safeParse(simulatedModelOutput);
 
 if (!result.success) {
   console.error(result.error);

@@ -2,24 +2,21 @@
 
 **Status: Experimental. May change before 1.0.0.**
 
-Forms projection is experimental and intentionally small. It converts object contracts into basic field metadata that can help generate form inputs, labels, and client-side required markers.
+`toFormConstraints()` converts object contracts into plain field metadata that can help generate form inputs, required markers, type hints, and select option lists.
 
-Future direction:
-
-```txt
-@sigil/forms
-```
+No HTML is generated. No DOM is required. No framework is required.
 
 For now, forms projection lives in core while the projection API stabilizes.
 
-## Example
+## Quick example
 
 ```js
-import { optional, sigil } from 'sigil';
+import { optional, oneOf, sigil } from '@weipertda/sigiljs';
 
 const User = sigil({
   name: String,
   age: optional(Number),
+  role: oneOf('admin', 'user'),
 });
 
 User.toFormConstraints();
@@ -29,43 +26,46 @@ returns:
 
 ```js
 {
-  name: {
-    required: true,
-    type: 'text',
-  },
-  age: {
-    required: false,
-    type: 'number',
-  },
+  fields: {
+    name: { name: 'name', path: ['name'], type: 'text',   required: true,  label: 'Name' },
+    age:  { name: 'age',  path: ['age'],  type: 'number', required: false, label: 'Age' },
+    role: { name: 'role', path: ['role'], type: 'select', required: true,  label: 'Role', options: ['admin', 'user'] },
+  }
 }
 ```
 
 ## Current metadata
 
-`toFormConstraints()` currently supports basic object fields:
+`toFormConstraints()` currently supports:
 
 - `string` → `{ type: 'text' }`
 - `number` / `bigint` → `{ type: 'number' }`
 - `boolean` → `{ type: 'checkbox' }`
-- literal unions → `{ type: 'select', options }`
-- primitive unions → `{ type, accepts }`
+- all-literal unions → `{ type: 'select', options }`
+- mixed unions → `{ type, accepts }`
+- nested exact objects → `{ type: 'object', fields: { ... } }`
+- arrays → `{ type: 'array', items: { ... } }`
 - optional fields → `required: false`
 - required fields → `required: true`
+- labels derived from field keys (camelCase and snake_case → Title Case)
+- `path` array tracking full nested field location
 
-Non-object contracts currently project to an empty object:
-
-```js
-sigil(String).toFormConstraints();
-// {}
-```
+Non-object contracts return `{ fields: {} }`.
 
 ## Runtime-first contract flow
 
 Forms projection does not replace runtime validation. It gives UI metadata from the same contract used at boundaries:
 
 ```txt
-Sigil contract → describe() → form constraints
-             ↘ parse()/safeParse() runtime enforcement
+Sigil contract → describe() → toFormConstraints() → plain field metadata
+             ↘ parse() / safeParse() → runtime enforcement
 ```
 
-This keeps the UI hints and runtime contract aligned without treating form metadata as the source of truth.
+The UI hints and runtime contract stay aligned without treating form metadata as the source of truth.
+
+## Docs
+
+- [Form Contracts](../forms/form-contracts.md) — define, enforce, transform form values
+- [Form Constraints](../forms/form-constraints.md) — full projection API and field shape
+- [Form Validation](../forms/form-validation.md) — safeParse, error paths, FormData
+- [Form Testing](../forms/form-testing.md) — mock(), cases(), test()

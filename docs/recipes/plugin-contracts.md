@@ -9,7 +9,7 @@ Plugin inputs cross a system boundary between host code and extension code. Enfo
 ## 2. Sigil contract
 
 ```js
-import { optional, sigil } from 'sigil';
+import { optional, sigil } from '@weipertda/sigiljs';
 
 const PluginOptions = sigil.exact({
   name: String,

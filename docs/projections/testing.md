@@ -7,10 +7,16 @@ SigilJS includes stable built-in helpers for deterministic fixture and test-case
 Future direction for additional testing capabilities:
 
 ```txt
-@sigil/testing
+fixtures()
 ```
 
-For now, `mock()` and `cases()` live in core.
+For now, the supported testing surface is:
+
+- `mock()` — one valid sample
+- `cases()` — labeled valid/invalid cases
+- `test()` — contract behavior report
+
+No additional fixture helper is needed at this time.
 
 ## `mock()`
 
@@ -33,7 +39,7 @@ returns:
 
 ```js
 {
-  id: 1,
+  id: 0,
   name: 'string',
   role: 'admin',
 }
@@ -44,9 +50,9 @@ Optional fields are omitted by default so the sample stays minimal but valid.
 Current deterministic mappings:
 
 - `string` → `'string'`
-- `number` → `1`
+- `number` → `0`
 - `boolean` → `true`
-- `bigint` → `1n`
+- `bigint` → `0n`
 - `null` → `null`
 - arrays → one mocked element
 - objects → required properties only
@@ -83,6 +89,41 @@ for (const value of cases.valid) {
 for (const value of cases.invalid) {
   expect(User.check(value)).toBe(false);
 }
+```
+
+## `test()`
+
+`test()` runs generated or custom cases against the contract and returns a plain report:
+
+```js
+const report = User.test();
+
+{
+  success: true,
+  valid: { passed: 1, failed: 0 },
+  invalid: { passed: 4, failed: 0 },
+  failures: [],
+}
+```
+
+Pass custom cases when you need boundary-specific coverage:
+
+```js
+const report = User.test({
+  valid: [
+    { label: 'minimum id', value: { id: 0, name: 'Ada' } }
+  ],
+  invalid: [
+    { label: 'negative id', value: { id: -1, name: 'Ada' } }
+  ]
+});
+```
+
+Tests against the report:
+
+```js
+expect(report.success).toBe(true);
+expect(report.failures).toEqual([]);
 ```
 
 ## Not fuzzing yet

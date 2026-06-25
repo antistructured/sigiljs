@@ -9,7 +9,7 @@ A form submit is unknown data from a user-controlled boundary. Enforce the contr
 ## 2. Sigil contract
 
 ```js
-import { oneOf, optional, sigil } from 'sigil';
+import { oneOf, optional, sigil } from '@weipertda/sigiljs';
 
 const SignupForm = sigil.exact({
   name: String,

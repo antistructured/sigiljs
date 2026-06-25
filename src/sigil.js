@@ -5,8 +5,8 @@ import { parse } from './core/parser.js';
 import { partial } from './core/partial.js';
 import { register, resolve } from './core/registry.js';
 import { validate } from './core/validate.js';
-import { projectionError } from './projection-error.js';
 import { projectCases } from './projections/cases.js';
+import { runContractTests } from './testing/test-runner.js';
 import { projectFormConstraints } from './projections/forms.js';
 import { projectJSONSchema } from './projections/json-schema.js';
 import { projectMock } from './projections/mock.js';
@@ -117,6 +117,7 @@ function createSigil(options = {}, strings, ...values) {
       projectMock(sigil.describe(), { ...options, resolve }),
     cases: (options = {}) =>
       projectCases(sigil.describe(), { ...options, resolve }),
+    test: (casesInput) => runContractTests(sigil, casesInput),
     diff: (other) =>
       diffContracts(sigil.describe(), describeOtherContract(other)),
     compile: () => validator,

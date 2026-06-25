@@ -38,7 +38,7 @@ Experimental APIs carry a warning in their documentation and may change before 1
 | `oneOf` | stable | Helper to create literal union/enum-style contracts. |
 | `pipe` | stable | Field-level transform composition helper. |
 | `trim` | stable | String trimming transform helper for `pipe`. |
-| `httpContract` | experimental | Framework-neutral request/response boundary helper. |
+| `httpContract` | experimental | Framework-neutral HTTP boundary helper with request parts, multi-status responses, and OpenAPI projection. |
 | `realType` | stable | Runtime type detector for values. |
 | `SigilValidationError` | stable | Structured error type for contract validation failures. |
 
@@ -493,17 +493,33 @@ User.toOpenAPI();
 
 Experimental. May change before 1.0.0.
 
-**Purpose:** project basic object contracts to form metadata.
+**Purpose:** project object contracts into plain form field metadata (type, required, label, path, options).
 
-**Signature:** `toFormConstraints() => object`
+**Signature:** `toFormConstraints() => { fields: { [key]: FieldConstraint } }`
 
 **Example:**
 
 ```js
-User.toFormConstraints();
+import { oneOf, optional, sigil } from '@weipertda/sigiljs';
+
+const SignupForm = sigil.exact({
+  name: String,
+  age: optional(Number),
+  role: oneOf('admin', 'user'),
+});
+
+const { fields } = SignupForm.toFormConstraints();
+fields.name.type     // 'text'
+fields.name.required // true
+fields.name.label    // 'Name'
+fields.age.required  // false
+fields.role.type     // 'select'
+fields.role.options  // ['admin', 'user']
 ```
 
-**Returns:** form constraint metadata for object contracts.
+**Returns:** `{ fields: { [fieldName]: { name, path, type, required, label, options?, accepts?, fields?, items? } } }`
+
+Non-object contracts return `{ fields: {} }`.
 
 **Throws:** never.
 
@@ -615,28 +631,78 @@ realType([]); // 'array'
 
 **Throws:** never.
 
-### `httpContract({ request, response })`
+### `httpContract({ request, response, ... })`
 
 **Status:** experimental
 
 Experimental. May change before 1.0.0.
 
-**Purpose:** framework-neutral request/response boundary helper.
+**Purpose:** framework-neutral HTTP request/response boundary helper.
 
-**Signature:** `httpContract({ request, response }) => object`
+**Signature:**
+
+```js
+httpContract({
+  request,    // Sigil contract for the request body (required)
+  response,   // Sigil contract for the primary response body (required)
+  responses?, // { [statusCode]: SigilContract } — multi-status response map
+  params?,    // Sigil contract for route params
+  query?,     // Sigil contract for query string values
+  headers?,   // Sigil contract for request headers
+  method?,    // string metadata (e.g. 'POST')
+  path?,      // string metadata (e.g. '/users/:id')
+  summary?,   // string metadata for OpenAPI
+  operationId?, // string metadata for OpenAPI
+}) => httpContractObject
+```
 
 **Example:**
 
 ```js
-const { parseRequest, serializeResponse } = httpContract({
-  request: ApiRequest,
-  response: ApiResponse,
+const CreateUser = httpContract({
+  method: 'POST',
+  path: '/users',
+  summary: 'Create a user',
+  operationId: 'createUser',
+  request: CreateUserBody,
+  response: UserResponse,
+  responses: {
+    201: UserResponse,
+    400: ErrorResponse,
+  },
+  params: sigil.exact({ id: String }),
+  headers: sigil.exact({ authorization: String *** });
+
+// Request
+const trusted = CreateUser.parseRequest({
+  params: { id: 'user-1' },
+  headers: { authorization: *** <token>' },
+  body: { name: 'Alex', email: 'alex@example.com', role: 'user' },
 });
+
+// Response
+const result = CreateUser.parseResponse({ status: 201, body: { id: 1, name: 'Alex' } });
+
+// OpenAPI
+CreateUser.toOpenAPI();   // operation-level shape
+CreateUser.toPathItem();  // path item shape keyed by path and method
 ```
 
-**Returns:** helpers for parsing and serializing HTTP contracts.
+**Returned object methods:**
 
-**Throws:** never.
+| Method | Description |
+|--------|-------------|
+| `parseRequest(input)` | Validates `{ body?, params?, query?, headers? }`. Throws on error. |
+| `safeParseRequest(input)` | Non-throwing. Returns `{ success, data }` or `{ success, error }`. |
+| `parseResponse(input)` | Accepts `{ status, body }` or flat body. Returns `{ status, body }`. |
+| `safeParseResponse(input)` | Non-throwing variant of `parseResponse`. |
+| `serializeResponse(body)` | Validates and returns the response body. Throws on error. |
+| `safeSerializeResponse(body)` | Non-throwing variant of `serializeResponse`. |
+| `toOpenAPI()` | Returns operation-level OpenAPI shape (requestBody + responses). |
+| `toPathItem()` | Returns path item shape `{ [path]: { [method]: operation } }`. |
+| `handler(fn)` | Wraps a function with request validation and response serialization. |
+
+**Throws:** `Error` (multi-part request errors carry a `parts` array); `SigilValidationError` (single-contract validation errors).
 
 ## Error shape
 

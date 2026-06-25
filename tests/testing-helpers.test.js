@@ -9,7 +9,7 @@ describe('Phase 12 Testing helpers', () => {
 
   test('mock() generates simple valid primitive samples', () => {
     expect(Sigil`string`.mock()).toBe('string');
-    expect(Sigil`number`.mock()).toBe(1);
+    expect(Sigil`number`.mock()).toBe(0);
     expect(Sigil`boolean`.mock()).toBe(true);
     expect(Sigil`null`.mock()).toBeNull();
   });
@@ -23,7 +23,7 @@ describe('Phase 12 Testing helpers', () => {
     });
 
     expect(User.mock()).toEqual({
-      id: 1,
+      id: 0,
       name: 'string',
       tags: ['string'],
     });
@@ -61,31 +61,112 @@ describe('Phase 12 Testing helpers', () => {
 
     const cases = User.cases();
 
-    expect(cases).toEqual({
-      valid: [
-        {
-          id: 1,
+    expect(cases.valid).toEqual([
+      {
+        label: 'valid default',
+        value: {
+          id: 0,
           name: 'string',
           role: 'admin',
         },
-      ],
-      invalid: [
-        {
-          name: 'string',
-          role: 'admin',
-        },
-      ],
-    });
-    expect(cases.valid.every((value) => User.check(value))).toBe(true);
-    expect(cases.invalid.every((value) => User.check(value))).toBe(false);
+      },
+    ]);
+
+    expect(cases.invalid.length).toBeGreaterThan(0);
+    expect(
+      cases.invalid.some((item) => item.label === 'missing required property: id'),
+    ).toBe(true);
+
+    for (const item of cases.valid) {
+      expect(User.check(item.value)).toBe(true);
+    }
+    for (const item of cases.invalid) {
+      expect(User.check(item.value)).toBe(false);
+    }
   });
 
   test('cases() works for primitive contracts', () => {
     const cases = Sigil`string`.cases();
 
     expect(cases).toEqual({
-      valid: ['string'],
-      invalid: [1],
+      valid: [{ label: 'valid default', value: 'string' }],
+      invalid: [{ label: 'invalid string', value: 0, expectedPath: [] }],
     });
+
+    for (const item of cases.valid) {
+      expect(Sigil`string`.check(item.value)).toBe(true);
+    }
+    for (const item of cases.invalid) {
+      expect(Sigil`string`.check(item.value)).toBe(false);
+    }
+  });
+
+  test('mock() returns valid data and passes contract.check()', () => {
+    const User = sigil.exact({
+      id: Number,
+      name: String,
+      role: oneOf('admin', 'user'),
+      age: optional(Number),
+    });
+
+    const sample = User.mock();
+    expect(User.check(sample)).toBe(true);
+  });
+
+  test('mock() omits optional fields by default', () => {
+    const User = sigil.exact({
+      id: Number,
+      name: String,
+      role: oneOf('admin', 'user'),
+      age: optional(Number),
+    });
+
+    const sample = User.mock();
+    expect(sample).toEqual({
+      id: 0,
+      name: 'string',
+      role: 'admin',
+    });
+    expect(sample).not.toHaveProperty('age');
+  });
+
+  test('mock() includes optional fields when includeOptional is true', () => {
+    const User = sigil.exact({
+      id: Number,
+      name: String,
+      role: oneOf('admin', 'user'),
+      age: optional(Number),
+    });
+
+    const sample = User.mock({ includeOptional: true });
+    expect(sample).toEqual({
+      id: 0,
+      name: 'string',
+      role: 'admin',
+      age: 0,
+    });
+    expect(User.check(sample)).toBe(true);
+  });
+
+  test('mock() output is deterministic', () => {
+    const User = sigil.exact({
+      id: Number,
+      name: String,
+      role: oneOf('admin', 'user'),
+    });
+
+    expect(User.mock()).toEqual(User.mock());
+    expect(User.cases()).toEqual(User.cases());
+  });
+
+  test('mock() on exact contract does not generate extra keys', () => {
+    const User = sigil.exact({
+      id: Number,
+      name: String,
+    });
+
+    const sample = User.mock();
+    expect(Object.keys(sample)).toEqual(['id', 'name']);
+    expect(User.check(sample)).toBe(true);
   });
 });

@@ -1,4 +1,4 @@
-import { projectionError, SigilProjectionError } from '../projection-error.js';
+import { projectionError } from '../projection-error.js';
 
 export function projectTypeScript(description, options = {}) {
   assertDescription(description);

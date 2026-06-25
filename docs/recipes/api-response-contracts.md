@@ -9,7 +9,7 @@ An API response is a system boundary too. Before returning data to callers, enfo
 ## 2. Sigil contract
 
 ```js
-import { optional, sigil } from 'sigil';
+import { optional, sigil } from '@weipertda/sigiljs';
 
 const UserResponse = sigil.exact({
   id: String,

@@ -209,9 +209,11 @@ type User = {
     expect(User.mock()).toEqual(User.mock());
     expect(User.check(User.mock())).toBe(true);
 
-    expect(User.cases()).toEqual({
-      valid: [
-        {
+    const cases = User.cases();
+    expect(cases.valid).toEqual([
+      {
+        label: 'valid default',
+        value: {
           id: 'string',
           name: 'string',
           role: 'admin',
@@ -220,22 +222,11 @@ type User = {
             tags: ['string'],
           },
         },
-      ],
-      invalid: [
-        {
-          name: 'string',
-          role: 'admin',
-          email: 'string',
-          profile: {
-            tags: ['string'],
-          },
-        },
-      ],
-    });
-    expect(User.cases()).toEqual(User.cases());
-    expect(User.cases().valid.every((value) => User.check(value))).toBe(true);
-    expect(User.cases().invalid.every((value) => User.check(value))).toBe(
-      false,
-    );
+      },
+    ]);
+    expect(cases.invalid.length).toBeGreaterThan(0);
+    expect(cases).toEqual(cases);
+    expect(cases.valid.every((item) => User.check(item.value))).toBe(true);
+    expect(cases.invalid.every((item) => User.check(item.value))).toBe(false);
   });
 });

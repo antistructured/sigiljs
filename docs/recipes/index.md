@@ -1,13 +1,26 @@
 # Boundary Contract Recipes
 
-Define structure once. Project it everywhere.
+Recipes show how SigilJS contracts move through real application boundaries.
 
-These recipes show SigilJS as an executable data contract system at real system boundaries. Each page starts with unknown data, defines one contract object, enforces it into trusted runtime data, and optionally projects the same contract for surrounding tools.
+See [docs/recipes/README.md](README.md) for the full recipe index.
 
-## Recipes
+## Quick links
+
+### End-to-end recipes
+
+- [Full Lifecycle](full-lifecycle.md) — all five pillars ⭐
+- [API Route](api-route.md) — request + response boundary
+- [LLM Output](llm-output.md) — validate AI structured output
+- [Form Submission](form-submission.md) — form values + projection
+- [Database Persistence](database-persistence.md) — record/insert/update + diff
+- [CLI Workflow](cli-workflow.md) — terminal contract commands
+- [Contract Testing](contract-testing.md) — mock, cases, test
+
+### Boundary reference recipes
 
 - [API request contracts](api-request-contracts.md)
 - [API response contracts](api-response-contracts.md)
+- [AI output contracts](ai-output-contracts.md)
 - [Database contracts](database-contracts.md)
 - [Form contracts](form-contracts.md)
 - [Event contracts](event-contracts.md)
@@ -16,7 +29,6 @@ These recipes show SigilJS as an executable data contract system at real system 
 - [Config contracts](config-contracts.md)
 - [Local storage contracts](local-storage-contracts.md)
 - [Plugin contracts](plugin-contracts.md)
-- [AI output contracts](ai-output-contracts.md)
 
 ## Recipe structure
 
