@@ -3,7 +3,7 @@
 Named sigils let you reuse a runtime contract by name.
 
 ```js
-import { Sigil } from 'sigil';
+import { Sigil } from '@weipertda/sigiljs';
 
 const Email = Sigil.define('Email')`string`;
 

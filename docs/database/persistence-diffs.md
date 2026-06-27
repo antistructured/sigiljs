@@ -10,7 +10,7 @@ SigilJS can validate data as it crosses persistence boundaries, without becoming
 
 ## How diff() works
 
-`A.diff(B)` shows what A is missing compared to B — properties that exist in B but not in A appear as `property.removed` from A's perspective. This identifies fields that a migration would need to add.
+Use `Next.diff(Previous)` to describe how a persistence contract changed from the previous version to the next version. Properties that exist in the next contract but not the previous contract appear as `property.added`; properties removed from the next contract appear as `property.removed`.
 
 ```js
 import { oneOf, sigil } from '@weipertda/sigiljs';
@@ -28,18 +28,18 @@ const NewUserRecord = sigil.exact({
   role: oneOf('admin', 'user'), // new field
 });
 
-const changes = OldUserRecord.diff(NewUserRecord);
-// [{ kind: 'property.removed', path: ['role'], impact: 'breaking' }]
+const changes = NewUserRecord.diff(OldUserRecord);
+// [{ kind: 'property.added', path: ['role'], impact: 'non-breaking' }]
 ```
 
-A `breaking` impact means old records parsed against the new schema will fail (the new schema requires the field; old rows don't have it).
+A `non-breaking` impact means the structural contract diff itself is additive. You may still need an application/database migration if the new field is required for stored rows or persistence code.
 
 ---
 
 ## Detecting breaking changes before deployment
 
 ```js
-const changes = OldSchema.diff(NewSchema);
+const changes = NewSchema.diff(OldSchema);
 const breaking = changes.filter((c) => c.impact === 'breaking');
 
 if (breaking.length > 0) {
@@ -76,7 +76,7 @@ if (!result.success) {
 // In a test or CI script
 import { OldUserRecord, NewUserRecord } from './contracts.js';
 
-const changes = OldUserRecord.diff(NewUserRecord);
+const changes = NewUserRecord.diff(OldUserRecord);
 const breaking = changes.filter((c) => c.impact === 'breaking');
 
 if (breaking.length > 0) {

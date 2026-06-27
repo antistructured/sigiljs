@@ -20,7 +20,7 @@ import {
   httpContract,
   realType,
   SigilValidationError,
-} from 'sigil';
+} from '@weipertda/sigiljs';
 ```
 
 Current export meanings:

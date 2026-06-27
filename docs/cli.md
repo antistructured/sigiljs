@@ -1,6 +1,8 @@
 # CLI
 
-SigilJS includes a Bun-native CLI for contract workflows outside application code.
+**Status: Experimental. The CLI is Bun-first. Commands, flags, output formats, exit-code contracts, CWD/module-loading behavior, and `.sigil` file-format compatibility may change before 1.0.0.**
+
+SigilJS includes a Bun-native CLI for contract workflows outside application code. The package runtime can be imported from Node-compatible ESM consumers, but the current `sigil` CLI bin itself uses Bun APIs and a Bun shebang.
 
 The package currently exposes the `sigil` bin from core:
 
@@ -53,7 +55,9 @@ A `.sigil` file contains a Sigil type expression:
 }
 ```
 
-The CLI loads `.sigil` files through the same template-string contract path used by `` Sigil`...` `` in code. JavaScript module contract files are not part of this workflow yet.
+The CLI loads `.sigil` files through the same template-string contract path used by `` Sigil`...` `` in code. It also supports `.sigil.js` JavaScript module contract files with default exports, single named export auto-selection, or explicit `--export <name>` selection.
+
+For real projects, prefer `.sigil.js` module files for now. They can share contracts with application code and avoid relying on the experimental `.sigil` text format. `.sigil.js` paths are resolved relative to the command's current working directory, so run commands from the project root or use absolute paths when imports are sensitive.
 
 JSON data files are regular `.json` files loaded from disk for commands such as `check`, `parse`, and `safe-parse`.
 

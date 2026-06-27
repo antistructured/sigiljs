@@ -8,6 +8,8 @@ No HTML is generated. No DOM is required. No framework is required.
 
 For now, forms projection lives in core while the projection API stabilizes.
 
+`toFormConstraints()` remains experimental until real UI adapter usage proves the final `{ fields }` shape, nested/array representation, metadata policy, and error-mapping expectations.
+
 ## Quick example
 
 ```js

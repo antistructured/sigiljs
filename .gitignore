@@ -1,3 +1,10 @@
+# AI-related files
+.gemini
+.agents
+.agents
+.hermes
+dev_flow.md
+
 # dependencies (bun install)
 node_modules
 

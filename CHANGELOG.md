@@ -4,6 +4,31 @@ All notable changes to `@weipertda/sigiljs` are documented here.
 
 This format follows [semantic-release](https://semantic-release.gitbook.io/) conventions adapted for manual maintenance.
 
+## 0.18.0
+
+### Added
+
+- Public `0.x` release notes for the `0.18.0` release line.
+- Public release prep reports covering carry-forward reconciliation, release scope, package metadata, README/docs polish, quickstart review, package contents, limitations, and release gates.
+
+### Changed
+
+- Prepared package metadata for a serious public `0.x` release while keeping the package name `@weipertda/sigiljs`.
+- Updated active public version labels to `0.18.0`.
+- Polished README status and stable API quick-map wording for public package consumers.
+- Improved docs navigation by fixing the TypeScript guide link in the docs index.
+- Excluded `docs/internal/` from the npm package while keeping public docs and examples included.
+- Kept `trials/` as repository-only validation evidence rather than npm package content.
+
+### Notes
+
+- Release theme: **Public 0.x release prep**.
+- SigilJS is ready for broader public `0.x` usage feedback, but this is not a `1.0.0` release.
+- Runtime dependencies remain zero.
+- No package split occurred.
+- CLI workflows, `httpContract()`, and `toFormConstraints()` remain experimental.
+- Known pre-1.0 blockers remain: real CLI field usage, real HTTP/runtime usage, real form/UI usage, final `.sigil` compatibility policy, and broader public feedback.
+
 ## 0.4.0
 
 ### Added

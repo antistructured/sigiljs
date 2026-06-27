@@ -112,7 +112,7 @@ database adapter
 
 ## Serialization behavior
 
-`serialize()` strips unknown fields and applies any registered transforms before a value is written. Use it when the contract includes transforms:
+`serialize()` validates/serializes the current shape but does not apply transforms. Use `parse()` when a contract includes transforms that must run before a value is written:
 
 ```js
 const NormalizedUser = NewUser.transform((d) => ({
@@ -120,17 +120,17 @@ const NormalizedUser = NewUser.transform((d) => ({
   email: d.email.toLowerCase(),
 }));
 
-const serialized = NormalizedUser.serialize(input);
+const normalized = NormalizedUser.parse(input);
 ```
 
 ---
 
 ## Contract diff behavior
 
-`diff(other)` compares two contract descriptions and returns a list of property changes with `impact: 'breaking'` or `'non-breaking'`. Use it to detect when a record contract shape has changed.
+`diff(other)` compares two contract descriptions and returns a list of property changes with `impact: 'breaking'`, `'non-breaking'`, or `'unknown'`. Use `Next.diff(Previous)` to detect when a record contract shape has changed.
 
 ```js
-OldUserRecord.diff(NewUserRecord)
+NewUserRecord.diff(OldUserRecord)
 // [{ kind: 'property.added', path: ['role'], impact: 'non-breaking' }]
 ```
 

@@ -95,9 +95,9 @@ const update = UserUpdate.parse(patch);
 const OldUserRecord = sigil.exact({ id: String, email: String });
 const NewUserRecord = sigil.exact({ id: String, email: String, role: oneOf('admin', 'user') });
 
-const changes = OldUserRecord.diff(NewUserRecord);
+const changes = NewUserRecord.diff(OldUserRecord);
 const breaking = changes.filter((c) => c.impact === 'breaking');
-// breaking.length > 0 → migration may be needed
+// breaking.length > 0 → migration/compatibility review may be needed
 ```
 
 ---

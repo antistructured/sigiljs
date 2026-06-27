@@ -11,8 +11,11 @@ Executable data contracts for JavaScript runtime boundaries.
 - [Sigils](sigils.md) — contract objects in depth
 - [Exact Mode](exact-mode.md) — strict field validation
 - [Public API Reference](api.md) — full stable + experimental API
+- [TypeScript Usage](typescript.md) — explicit generics and conservative declarations
 - [Stability Map](stability.md) — what's stable, what's experimental
 - [Known Limitations](known-limitations.md) — honest constraints
+
+SigilJS is written in JavaScript and ships TypeScript declarations for public API consumption. The declarations are conservative and describe the public runtime API without requiring TypeScript source or a build step.
 
 ---
 
@@ -26,6 +29,8 @@ Executable data contracts for JavaScript runtime boundaries.
 - [realType](realtype.md)
 - [Exact Mode](exact-mode.md)
 - [Compiled Validators](compiled-validators.md)
+- [TypeScript Usage](typescript.md)
+- [Contract Diff Usage](diff.md)
 
 ---
 
@@ -34,7 +39,7 @@ Executable data contracts for JavaScript runtime boundaries.
 - [Projections overview](projections.md)
 - [JSON Schema](projections/json-schema.md)
 - [OpenAPI](projections/openapi.md)
-- [TypeScript](projections/typescript.md)
+- [TypeScript Usage](typescript.md)
 - [Forms Projection](projections/forms.md)
 - [Testing Helpers](projections/testing.md)
 - [Contract Lifecycle](projections/lifecycle.md)
@@ -45,6 +50,7 @@ Executable data contracts for JavaScript runtime boundaries.
 
 - [Contract-Driven Testing](testing.md)
 - [Testing Helpers](projections/testing.md)
+- [Contract Diff Usage](diff.md)
 
 ---
 
@@ -67,7 +73,6 @@ Executable data contracts for JavaScript runtime boundaries.
 ## HTTP
 
 - [HTTP Boundary Helpers](projections/http.md) — experimental
-- [HTTP Boundary Docs](http/) *(see projections/http.md)*
 
 ---
 
@@ -126,17 +131,3 @@ Executable data contracts for JavaScript runtime boundaries.
 - [SigilJS vs Zod](sigil-vs-zod.md)
 - [Package Split Policy](package-split.md)
 - [v1 Readiness](v1-readiness.md)
-
----
-
-## Internal reports
-
-Internal docs live in [`docs/internal/`](internal/) and are not public API references. They record design decisions, audit results, and readiness reports.
-
-Key internal documents:
-- [Public API Audit](internal/public-export-audit.md)
-- [Projection Boundary Audit](internal/projection-boundary-audit.md)
-- [Database Boundary Model](internal/database-boundary-model.md)
-- [HTTP Contract Decisions](internal/http-contract-stabilization-decision.md)
-- [Forms Extraction Readiness](internal/forms-extraction-readiness.md)
-- [CLI Extraction Readiness](internal/cli-extraction-readiness.md)

@@ -37,7 +37,9 @@ const UpdateUser = httpContract({
   response: sigil.exact({ id: Number, name: String, email: String }),
   params:  sigil.exact({ id: String }),
   query:   sigil.exact({ dryRun: optional(String) }),
-  headers: sigil.exact({ authorization: String ***```
+  headers: sigil.exact({ requestId: String }),
+});
+```
 
 Input shape for `parseRequest`:
 
@@ -45,7 +47,7 @@ Input shape for `parseRequest`:
 {
   params:  { id: 'user-42' },
   query:   { dryRun: 'false' },
-  headers: { authorization: 'Bearer <token>' },
+  headers: { requestId: 'req_123' },
   body:    { name: 'Dana' },
 }
 ```
@@ -55,7 +57,7 @@ Input shape for `parseRequest`:
 ```js
 const trusted = UpdateUser.parseRequest({
   params: { id: 'user-42' },
-  headers: { authorization: 'Bearer <token>' },
+  headers: { requestId: 'req_123' },
   body: { name: 'Dana' },
 });
 
@@ -206,6 +208,8 @@ Known status code descriptions include: 200, 201, 204, 400, 401, 403, 404, 409, 
 ## Framework adapter boundary
 
 Do not add framework dependencies to core.
+
+`httpContract()` remains experimental until route usage proves the final request-part semantics, error aggregation shape, response routing behavior, and OpenAPI path assembly shape.
 
 Future adapters should be thin wrappers that normalize framework-specific request/response objects into the plain `{ body, params, query, headers }` input shape:
 

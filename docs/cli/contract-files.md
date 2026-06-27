@@ -1,5 +1,7 @@
 # Contract Files
 
+**Status: Experimental. The CLI is Bun-first, and the `.sigil` text format plus CLI module-loading behavior may change before 1.0.0.**
+
 The CLI loads contracts from two formats.
 
 ---
@@ -89,3 +91,5 @@ Use `.sigil.js` module files for:
 - contracts already defined in your codebase
 - contracts using `sigil.exact()`, `optional()`, `oneOf()`, and other JS API features
 - sharing contracts between application code and CLI workflows
+
+For real projects, prefer `.sigil.js` until the `.sigil` text format has a compatibility policy. Run commands from the project root or use absolute paths because module loading is resolved relative to the current working directory.

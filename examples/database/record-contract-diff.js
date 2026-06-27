@@ -27,8 +27,8 @@ const NewUserRecord = sigil.exact({
   role: oneOf('admin', 'user'),
 });
 
-// diff() from old → new: what changed?
-const changes = OldUserRecord.diff(NewUserRecord);
+// diff() from old → new: call Next.diff(Previous)
+const changes = NewUserRecord.diff(OldUserRecord);
 console.log('Changes from old to new:', JSON.stringify(changes, null, 2));
 
 // Check for breaking changes
@@ -45,9 +45,10 @@ if (breaking.length > 0) {
   }
 }
 
-// A field removal is breaking (new contract removes a field old code expects)
-const WithoutEmail = sigil.exact({ id: String, name: String });
-const removedChanges = NewUserRecord.diff(WithoutEmail);
+// A field removal is breaking (next contract removes a field old code expects)
+const PreviousWithEmail = sigil.exact({ id: String, email: String, name: String });
+const NextWithoutEmail = sigil.exact({ id: String, name: String });
+const removedChanges = NextWithoutEmail.diff(PreviousWithEmail);
 console.log('\nRemoving email field:');
 for (const c of removedChanges) {
   console.log(' -', c.kind, 'at path:', c.path.join('.'), '| impact:', c.impact);

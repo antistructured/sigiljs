@@ -1,4 +1,4 @@
-import { aiSchema, oneOf, optional, sigil } from '@weipertda/sigiljs';
+import { oneOf, optional, sigil } from '@weipertda/sigiljs';
 
 const LeadIntent = sigil.exact({
   name: String,
@@ -10,7 +10,7 @@ const LeadIntent = sigil.exact({
 
 const responseFormat = {
   name: 'lead_intent',
-  schema: aiSchema(LeadIntent),
+  schema: LeadIntent.toJSONSchema(),
 };
 
 const lead = LeadIntent.parse({

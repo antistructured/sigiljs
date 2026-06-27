@@ -18,7 +18,7 @@ const User = z.object({
 ```
 
 ```js
-import { Sigil } from 'sigil';
+import { Sigil } from '@weipertda/sigiljs';
 
 const User = Sigil`
 {

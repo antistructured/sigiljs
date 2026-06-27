@@ -2,7 +2,7 @@
 
 SigilJS includes stable built-in helpers for deterministic fixture and test-case generation.
 
-`mock()` and `cases()` are part of the stable 0.4.0 public API. They are not experimental.
+`mock()`, `cases()`, and `test()` are stable public API candidates for the future 1.0 core. They are not experimental.
 
 Future direction for additional testing capabilities:
 
@@ -23,7 +23,7 @@ No additional fixture helper is needed at this time.
 `mock()` generates a simple valid sample value:
 
 ```js
-import { oneOf, optional, sigil } from 'sigil';
+import { oneOf, optional, sigil } from '@weipertda/sigiljs';
 
 const User = sigil({
   id: Number,

@@ -1,6 +1,6 @@
 # Known Limitations
 
-**Package:** `@weipertda/sigiljs` v0.10.0
+**Package:** `@weipertda/sigiljs` v0.18.0
 
 This page documents current known limitations honestly. These are not bugs unless noted — they are constraints of the current design that are worth understanding before adopting SigilJS.
 
@@ -20,13 +20,19 @@ When loading `.sigil.js` files, the CLI resolves paths relative to `process.cwd(
 
 **Workaround:** Run CLI commands from the project root, or use absolute paths in `.sigil.js` module imports.
 
-### No confirmed real-world CLI usage data
+### CLI is Bun-first and experimental
 
-The CLI is experimental and has not been validated in large production workflows. Commands and flags may change before 1.0.0.
+The CLI is experimental and has not been validated in large production workflows. The current `sigil` bin uses a Bun shebang and Bun APIs. Commands, flags, output formats, exit-code contracts, CWD/module-loading behavior, and `.sigil` compatibility may change before 1.0.0.
+
+**Workaround:** Prefer `.sigil.js` contract files and run commands from the project root while the CLI remains experimental.
 
 ---
 
 ## API limitations
+
+### `compile()` is advanced contract-method access, not a standalone public compiler
+
+Contracts expose `contract.compile()` for direct access to their cached boolean validator. The lower-level compiler implementation is internal and is not exported from `@weipertda/sigiljs`.
 
 ### No "at least one optional field" constraint
 
@@ -42,11 +48,15 @@ Update contracts like `{ name: optional(String), updatedAt: String }` will accep
 
 ### HTTP helpers are experimental
 
-`httpContract()` is experimental. The input shape (`{ body, params, query, headers }`), response routing, and OpenAPI projection may change before 1.0.0.
+`httpContract()` is experimental. The input shape (`{ body, params, query, headers }`), missing-part semantics, aggregated `error.parts` shape, response routing, and OpenAPI projection may change before 1.0.0.
+
+Before stabilization, SigilJS needs more real route evidence for params/query/headers/body handling, multi-status responses, framework-normalized inputs, and `toOpenAPI()` / `toPathItem()` assembly.
 
 ### Form constraints are experimental
 
-`toFormConstraints()` is experimental. The `{ fields }` wrapper shape, `path`, `label`, and nested/array behavior may change before 1.0.0.
+`toFormConstraints()` is experimental. The `{ fields }` wrapper shape, `path`, `label`, options, nested/array behavior, and metadata policy may change before 1.0.0.
+
+Before stabilization, SigilJS needs real UI/form adapter evidence for labels, widgets, help text, semantic formats, custom messages, nested field flattening, and error mapping.
 
 ### CLI workflows are experimental
 
@@ -70,13 +80,17 @@ These are application-layer or future adapter-package concerns.
 
 ## Package split
 
-No `@sigil/*` sub-packages exist yet. `@sigil/cli`, `@sigil/http`, `@sigil/forms`, `@sigil/db`, and `@sigil/ai` are planned but intentionally deferred until the core API stabilizes at 1.0.0.
+No `@sigil/*` sub-packages exist yet. `@sigil/cli`, `@sigil/http`, `@sigil/forms`, `@sigil/db`, `@sigil/ai`, and `@sigil/types` are planned boundaries only and intentionally deferred until the core API stabilizes at 1.0.0 and real usage justifies extraction.
 
 ---
 
 ## TypeScript
 
-SigilJS is pure JavaScript with no TypeScript source. There are no `.d.ts` type declaration files currently published. TypeScript users can use `toTypeScript()` to generate types from contracts, but there is no automatic TypeScript inference.
+SigilJS is pure JavaScript with no TypeScript source and ships TypeScript declarations for public API consumption via `index.d.ts`.
+
+The declarations are intentionally conservative. They describe the public runtime API and support explicit generics such as `sigil<User>(...)`, but they do not yet infer precise object shapes from every contract definition.
+
+TypeScript users can also use `toTypeScript()` to generate domain type declarations from individual contracts at runtime.
 
 ---
 

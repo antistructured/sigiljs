@@ -1,40 +1,36 @@
 # AI Structured Output Contracts
 
-SigilJS can define runtime contracts for LLM applications.
+SigilJS can define runtime contracts for LLM applications without adding a provider SDK or a provider-specific helper.
 
-The core bridge is:
+The supported bridge is:
 
 ```txt
-Sigil contract → JSON Schema → structured-output / tool-call schema
-              ↘ parse()/safeParse() → trusted runtime object
+Sigil contract → contract.toJSONSchema() → structured-output / tool-call schema
+              ↘ parse()/safeParse()   → trusted runtime object
 ```
 
 This makes SigilJS useful at AI boundaries where model output is uncertain until validated.
 
-Forward-looking package name:
+---
 
-```txt
-@sigil/ai
-```
+## Status
 
-For now, the AI helper and examples live in core while the projection API stabilizes.
+AI usage currently relies on stable public APIs:
 
-## Experimental helper
+- `contract.toJSONSchema()`
+- `contract.safeParse(output)`
+- `contract.parse(output)`
 
-```js
-import { aiSchema } from '@weipertda/sigiljs';
+No AI-specific schema helper is exported by `@weipertda/sigiljs`.
 
-const schema = aiSchema(LeadIntent);
-```
+Future provider-specific helpers or packages such as `@sigil/ai` are intentionally deferred until real usage proves they are needed.
 
-`aiSchema(contract, options?)` is an **experimental** wrapper around `contract.toJSONSchema(options)`.
-It is a convenience helper, not a provider adapter.
-Provider compatibility may vary because structured-output APIs accept JSON-Schema-like shapes, but not all of them accept the full JSON Schema draft or all Sigil projection forms.
+---
 
 ## Structured-output example
 
 ```js
-import { aiSchema, oneOf, optional, sigil } from '@weipertda/sigiljs';
+import { oneOf, optional, sigil } from '@weipertda/sigiljs';
 
 const LeadIntent = sigil.exact({
   name: String,
@@ -46,10 +42,18 @@ const LeadIntent = sigil.exact({
 
 const responseFormat = {
   name: 'lead_intent',
-  schema: aiSchema(LeadIntent),
+  schema: LeadIntent.toJSONSchema(),
 };
 
-const lead = LeadIntent.parse(llmOutput);
+// Pass responseFormat to your LLM provider as structured-output config.
+// SigilJS does not call the provider.
+
+const result = LeadIntent.safeParse(llmOutput);
+if (!result.success) {
+  throw new Error(`Invalid model output: ${result.error.message}`);
+}
+
+const lead = result.data;
 ```
 
 Flow:
@@ -61,15 +65,15 @@ uncertain AI output → Sigil contract → trusted runtime object
 Runnable example:
 
 ```bash
-bun run examples/ai/ai-schema.js
+bun run examples/ai/llm-structured-output.js
 ```
 
-See [`../../examples/ai/ai-schema.js`](../../examples/ai/ai-schema.js).
+---
 
 ## Tool-call example
 
 ```js
-import { aiSchema, oneOf, optional, sigil } from '@weipertda/sigiljs';
+import { oneOf, optional, sigil } from '@weipertda/sigiljs';
 
 const CreateTicketToolCall = sigil.exact({
   title: String,
@@ -82,50 +86,63 @@ const toolDefinition = {
   type: 'function',
   function: {
     name: 'create_ticket',
-    parameters: aiSchema(CreateTicketToolCall),
+    parameters: CreateTicketToolCall.toJSONSchema(),
   },
 };
+
+// Pass toolDefinition to your LLM provider.
+// Validate the arguments you receive before using them.
 
 const ticket = CreateTicketToolCall.parse(modelToolCallArguments);
 ```
 
-Runnable example:
+Runnable examples:
 
 ```bash
-bun run examples/ai/ai-schema.js
+bun run examples/ai/tool-call-create-ticket.js
+bun run examples/ai/tool-call-schedule-followup.js
 ```
 
-See [`../../examples/ai/ai-schema.js`](../../examples/ai/ai-schema.js).
+---
 
 ## Why JSON Schema first?
 
-Many structured-output and tool-call APIs already accept JSON Schema-like shapes. `aiSchema()` lets one Sigil contract serve two roles:
+Many structured-output and tool-call APIs already accept JSON Schema-like shapes. `toJSONSchema()` lets one Sigil contract serve two roles:
 
-1. generate the schema passed to the AI API
+1. generate the schema-like shape passed to an AI API
 2. validate the model result at runtime
 
 The schema request narrows model output, but runtime validation is still required. Model output remains untrusted until `parse()` or `safeParse()` succeeds.
+
+---
 
 ## Provider compatibility
 
 No provider-specific format is claimed as universal.
 
-`aiSchema()` produces JSON Schema-like output from a Sigil contract. Some provider SDKs map JSON Schema directly, some expect predefined fields like `strict` or `additionalProperties`, and some definitions are not required to be supported. If an API expects a different provider-specific shape, adapt `toJSONSchema()` manually at the boundary.
+`toJSONSchema()` produces JSON Schema-like output from a Sigil contract. Some provider SDKs map JSON Schema directly, some expect additional wrapper fields, and some support only subsets. If an API expects a different provider-specific shape, adapt `toJSONSchema()` manually at the boundary.
+
+SigilJS does not call the model. It validates the output your application receives.
+
+---
 
 ## Future `repair()` experiment
 
 Do not implement this in core yet.
 
-A possible future API:
+A possible future pattern:
 
 ```js
-const lead = await LeadIntent.repair(output, async ({ error, output }) => {
-  return repairWithLLM({
-    error: error.toJSON(),
+const result = LeadIntent.safeParse(output);
+if (!result.success) {
+  const repaired = await repairWithLLM({
+    error: result.error.toJSON?.() ?? result.error,
     output,
     schema: LeadIntent.toJSONSchema(),
   });
-});
+
+  LeadIntent.parse(repaired);
+}
 ```
 
 Possible flow:
@@ -138,4 +155,4 @@ parse fails
 → reparse
 ```
 
-This belongs in a future `@sigil/ai` package once the core projection model is mature.
+This is a design note only, not a current public API.

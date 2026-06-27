@@ -1,7 +1,8 @@
 {
   "name": "@weipertda/sigiljs",
-  "version": "0.10.0",
+  "version": "0.18.0",
   "description": "Executable data contracts for JavaScript runtime boundaries.",
+  "types": "./index.d.ts",
   "keywords": [
     "bun",
     "cli",
@@ -22,7 +23,9 @@
     "validation",
     "zero-dependency"
   ],
-  "publishConfig": { "access": "public" },
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/antistructured/sigiljs.git"
@@ -39,13 +42,19 @@
   "sideEffects": false,
   "type": "module",
   "exports": {
-    ".": "./src/index.js"
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./src/index.js"
+    }
   },
   "main": "./src/index.js",
   "files": [
     "bin",
+    "CHANGELOG.md",
     "docs",
+    "!docs/internal",
     "examples",
+    "index.d.ts",
     "LICENSE",
     "README.md",
     "src"
@@ -57,6 +66,8 @@
     "format": "prettier --write src/",
     "lint": "eslint src/",
     "test": "bun test",
+    "check:types": "tsc --noEmit -p tests/typescript-declarations/tsconfig.json",
+    "check:release": "bun run lint && bun test && bun run check:types && npm pack --dry-run",
     "bench": "bun run bench/validate-user.js"
   },
   "engines": {
@@ -64,6 +75,7 @@
     "node": ">=18"
   },
   "devDependencies": {
+    "typescript": "^6.0.3",
     "zod": "^4.4.3"
   }
 }

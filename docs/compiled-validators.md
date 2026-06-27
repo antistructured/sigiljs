@@ -9,7 +9,7 @@ When you create a Sigil using the template tag, SigilJS parses the type expressi
 This compiled validator is cached, meaning that repeated validations do not perform any string parsing, AST traversal, or tokenizing.
 
 ```javascript
-import { Sigil } from 'sigil';
+import { Sigil } from '@weipertda/sigiljs';
 
 const User = Sigil`
 {
@@ -23,6 +23,8 @@ User.check({ name: 'Alice', age: 30 });
 ```
 
 ## Direct Validator Access
+
+**Status:** advanced public contract method. The low-level compiler implementation is internal and is not exported from the package root.
 
 If you need direct access to the compiled validator function, you can access the `.validator` property on any Sigil instance, or call `.compile()`. Both return the exact same function reference:
 

@@ -5,7 +5,7 @@ SigilJS is an executable data contract system for JavaScript.
 A sigil is not a schema. It is a contract object: one runtime artifact that can validate, transform, describe, and project data across system boundaries.
 
 ```js
-import { Sigil } from 'sigil';
+import { Sigil } from '@weipertda/sigiljs';
 
 const User = Sigil`
 {

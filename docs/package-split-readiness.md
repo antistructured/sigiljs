@@ -257,16 +257,15 @@ Should not require:
 - CLI code
 - benchmark or example code
 
-### `@sigil/json-schema`
+### Future `@sigil/json-schema` package (does not exist yet)
 
 Owns JSON Schema projection from the public description model.
 
 Recommended API shape:
 
-```js
-import { toJSONSchema } from '@sigil/json-schema';
-
-toJSONSchema(contractOrDescription, options);
+```txt
+// hypothetical future package API, not available today
+toJSONSchema(contractOrDescription, options)
 ```
 
 Responsibilities:
@@ -285,16 +284,15 @@ Should not consume:
 - parser AST
 - normalized compiler internals
 
-### `@sigil/ts`
+### Future `@sigil/ts` package (does not exist yet)
 
 Owns TypeScript declaration generation.
 
 Recommended API shape:
 
-```js
-import { toTypeScript } from '@sigil/ts';
-
-toTypeScript(contractOrDescription, { name: 'User' });
+```txt
+// hypothetical future package API, not available today
+toTypeScript(contractOrDescription, { name: 'User' })
 ```
 
 Responsibilities:
@@ -307,17 +305,16 @@ Responsibilities:
 
 Should remain dependency-light. TypeScript itself is not required for the current emit-only MVP.
 
-### `@sigil/openapi`
+### Future `@sigil/openapi` package (does not exist yet)
 
 Owns OpenAPI schema and operation helpers.
 
 Recommended API shape:
 
-```js
-import { toOpenAPI, operation } from '@sigil/openapi';
-
-toOpenAPI(contractOrDescription, options);
-operation({ request, response, method, path });
+```txt
+// hypothetical future package API, not available today
+toOpenAPI(contractOrDescription, options)
+operation({ request, response, method, path })
 ```
 
 Responsibilities:

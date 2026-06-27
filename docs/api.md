@@ -2,6 +2,8 @@
 
 This page documents the stable public API for `@weipertda/sigiljs`.
 
+SigilJS is written in JavaScript and ships TypeScript declarations for public API consumption via `index.d.ts`. The declarations are conservative: they describe the public runtime API and allow explicit generics such as `sigil<User>(...)`, but they do not yet infer precise object shapes from every contract definition.
+
 ```js
 import {
   Sigil,
@@ -13,15 +15,19 @@ import {
   trim,
   httpContract,
   realType,
+  real,
+  Real,
   SigilValidationError,
 } from '@weipertda/sigiljs';
 ```
 
-**Stable (0.4.0):** `Sigil`, `sigil`, `sigil.exact`, `optional`, `union`, `oneOf`, `pipe`, `trim`, `realType`, contract methods (`check`, `assert`, `parse`, `safeParse`, `serialize`, `transform`, `withMetadata`, `version`, `describe`, `toJSONSchema`, `toTypeScript`, `toOpenAPI`, `diff`, `compile`, `mock`, `cases`), `SigilValidationError`, and constructor helpers (`Sigil.exact`, `Sigil.meta`, `Sigil.named` / `Sigil.define`, `Sigil.collection`).
+**Stable candidates (0.18.0):** `Sigil`, `sigil`, `sigil.exact`, `optional`, `union`, `oneOf`, `pipe`, `trim`, `realType`, contract methods (`check`, `assert`, `parse`, `safeParse`, `serialize`, `transform`, `withMetadata`, `version`, `describe`, `toJSONSchema`, `toTypeScript`, `toOpenAPI`, `diff`, `compile`, `mock`, `cases`, `test`), `SigilValidationError`, and constructor helpers (`Sigil.exact`, `Sigil.meta`, `Sigil.named` / `Sigil.define`, `Sigil.collection`).
 
-**Experimental (0.4.0):** `httpContract`, `toFormConstraints()`.
+**Experimental (0.18.0):** `httpContract`, `toFormConstraints()`.
 
 Experimental APIs carry a warning in their documentation and may change before 1.0.0.
+
+**Type declarations:** the package exposes `"types": "./index.d.ts"` for TypeScript consumers. Source files remain plain JavaScript and no TypeScript build step is required to publish or run SigilJS. See [`docs/typescript.md`](typescript.md) for explicit generic examples and conservative inference limits.
 
 > **Preferred API:** `sigil()` is the primary object-definition API. `Sigil`\`...\` is supported as an alternative template syntax. `S` and `T` are legacy aliases for `Sigil` and should not be used in new code.
 
@@ -29,7 +35,7 @@ Experimental APIs carry a warning in their documentation and may change before 1
 
 | Export | Status | Purpose |
 |---------|--------|---------|
-| `Sigil` | stable | Tagged-template contract factory. |
+| `Sigil` | stable advanced | Tagged-template contract factory. |
 | `S` | stable (legacy) | Legacy convenience alias for `Sigil`. |
 | `T` | stable (legacy) | Legacy convenience alias for `Sigil`. |
 | `sigil` | stable | Plain JavaScript object-definition contract factory. |
@@ -40,7 +46,9 @@ Experimental APIs carry a warning in their documentation and may change before 1
 | `trim` | stable | String trimming transform helper for `pipe`. |
 | `httpContract` | experimental | Framework-neutral HTTP boundary helper with request parts, multi-status responses, and OpenAPI projection. |
 | `realType` | stable | Runtime type detector for values. |
-| `SigilValidationError` | stable | Structured error type for contract validation failures. |
+| `real` | stable (legacy) | Legacy convenience alias for `realType`. |
+| `Real` | stable (legacy) | Legacy convenience alias for `realType`. |
+| `SigilValidationError` | stable | Structured error type for contract validation failures: `{ name, code, message, path, expected, actual }`. |
 
 ## Define pillar
 
@@ -208,7 +216,7 @@ Every contract object returned by `Sigil`, `sigil()`, or `sigil.exact()` shares 
 | `check(value)` | stable | Returns `true` or `false`. |
 | `assert(value)` | stable | Returns trusted value or throws. |
 | `parse(value)` | stable | Returns trusted value or throws. |
-| `safeParse(value)` | stable | Returns `{ success, data }` or `{ success, error }`. |
+| `safeParse(value)` | stable | Returns `{ success: true, data }` or `{ success: false, error }`. |
 | `serialize(value)` | stable | Validates trusted data for boundary output. |
 | `transform(fn)` | stable | Returns a derived contract with a transform. |
 | `withMetadata(metadata)` | stable | Returns a derived contract with metadata. |
@@ -220,8 +228,9 @@ Every contract object returned by `Sigil`, `sigil()`, or `sigil.exact()` shares 
 | `toFormConstraints()` | experimental | Projects basic form constraints for object contracts. |
 | `mock()` | stable | Returns a deterministic valid sample value. |
 | `cases()` | stable | Returns deterministic `{ valid, invalid }` test cases. |
+| `test(cases?)` | stable | Returns deterministic contract proof summary object. |
 | `diff(other)` | stable | Returns deterministic lifecycle diff entries. |
-| `compile()` | stable | Returns the compiled boolean validator. |
+| `compile()` | stable advanced | Returns the cached compiled boolean validator from a contract instance. |
 
 ### Contract lifecycle metadata
 
@@ -297,7 +306,7 @@ const trusted = User.assert(unknownInput);
 const trusted = User.parse(unknownInput);
 ```
 
-**Returns:** the validated input value.
+**Returns:** the validated value. For transformed contracts, `parse()` validates input, applies field and contract transforms, revalidates the transformed output, and returns the transformed output.
 
 **Throws:** `SigilValidationError` when invalid.
 
@@ -307,7 +316,7 @@ const trusted = User.parse(unknownInput);
 
 **Purpose:** validate without throwing.
 
-**Signature:** `safeParse(value, options?) => { success, data? | error? }`
+**Signature:** `safeParse(value, options?) => { success: true, data } | { success: false, error }`
 
 **Example:**
 
@@ -323,7 +332,9 @@ const result = User.safeParse(unknownInput);
 { success: false, error: SigilValidationError }
 ```
 
-**Throws:** never.
+`safeParse()` delegates to `parse()`, so successful transformed contracts return transformed data in the success branch. Ordinary validation failures do not throw.
+
+**Throws:** never for ordinary validation failures.
 
 ### `contract.serialize(value)`
 
@@ -339,7 +350,7 @@ const result = User.safeParse(unknownInput);
 const output = User.serialize(trustedValue);
 ```
 
-**Returns:** the validated value.
+**Returns:** the validated value. `serialize()` validates only and does **not** apply field-level or contract-level transforms.
 
 **Throws:** `SigilValidationError` when invalid.
 
@@ -347,7 +358,7 @@ const output = User.serialize(trustedValue);
 
 **Status:** stable
 
-**Purpose:** create a derived contract that transforms then revalidates.
+**Purpose:** create a derived contract that validates input, transforms, then revalidates transformed output during `parse()`.
 
 **Signature:** `transform(fn) => contract`
 
@@ -360,7 +371,7 @@ const TrimmedUser = User.transform((user) => ({
 }));
 ```
 
-**Returns:** a new derived contract.
+**Returns:** a new derived contract. Transform callbacks run in registration order during `parse()` / successful `safeParse()`.
 
 **Throws:** throws if the transformed value fails revalidation during `parse()`.
 
@@ -440,7 +451,7 @@ User.describe();
 User.toJSONSchema();
 ```
 
-**Returns:** a JSON Schema-like object.
+**Returns:** a deterministic JSON Schema-like subset object. Object property order and required-field order follow contract definition order. Metadata maps to `title`, `description`, `x-version`, and `x-tags`.
 
 **Throws:** never.
 
@@ -483,7 +494,7 @@ type User = {
 User.toOpenAPI();
 ```
 
-**Returns:** an OpenAPI-compatible schema object.
+**Returns:** an OpenAPI-compatible schema-level object. This is a schema projection, not a full OpenAPI document or path item.
 
 **Throws:** never.
 
@@ -529,7 +540,7 @@ Non-object contracts return `{ fields: {} }`.
 
 **Purpose:** generate a deterministic valid sample value.
 
-**Signature:** `mock() => any`
+**Signature:** `mock(options?) => value`
 
 **Example:**
 
@@ -537,7 +548,9 @@ Non-object contracts return `{ fields: {} }`.
 User.mock();
 ```
 
-**Returns:** a valid sample value for the contract.
+**Returns:** a deterministic structurally valid sample value for the contract. Optional fields are omitted by default and included with `{ includeOptional: true }`.
+
+Generated values are structurally valid but not semantically meaningful.
 
 **Throws:** never.
 
@@ -547,30 +560,63 @@ User.mock();
 
 **Purpose:** return deterministic valid/invalid contract test cases.
 
-**Signature:** `cases() => { valid: [any], invalid: [[value, path, expected, actual], ...] }`
+**Signature:** `cases(options?) => { valid: CaseEntry[], invalid: CaseEntry[] }`
 
 **Example:**
 
 ```js
-User.cases();
+const cases = User.cases();
 ```
 
 **Returns:**
 
 ```ts
 {
-  valid: any[];
-  invalid: Array<[value, path, expected, actual]>;
+  valid: Array<{ label: string; value: unknown }>;
+  invalid: Array<{
+    label: string;
+    value: unknown;
+    expectedPath?: Array<string | number>;
+  }>;
 }
 ```
 
 **Throws:** never.
+
+### `contract.test(cases?)`
+
+**Status:** stable
+
+**Purpose:** run generated or custom cases against the contract and return a runner-agnostic report.
+
+**Signature:** `test(cases?) => { success, valid, invalid, failures }`
+
+**Example:**
+
+```js
+const report = User.test();
+```
+
+**Returns:**
+
+```ts
+{
+  success: boolean;
+  valid: { passed: number; failed: number };
+  invalid: { passed: number; failed: number };
+  failures: Array<{ kind: 'valid' | 'invalid'; label: string; value: unknown }>;
+}
+```
+
+**Throws:** never for ordinary case pass/fail results.
 
 ### `contract.diff(other)`
 
 **Status:** stable
 
 **Purpose:** compare contracts for lifecycle drift.
+
+Use `Next.diff(Previous)` to describe changes from the previous contract to the next contract. See [`docs/diff.md`](diff.md) for migration and API review examples.
 
 **Signature:** `diff(other) => change[]`
 
@@ -584,8 +630,8 @@ const changes = NextUser.diff(PreviousUser);
 
 ```js
 [
-  { kind: 'property_added', path: 'displayName', impact: 'non-breaking', ... },
-  { kind: 'property_removed', path: 'username', impact: 'breaking', ... },
+  { kind: 'property.added', path: ['displayName'], impact: 'non-breaking', ... },
+  { kind: 'property.removed', path: ['username'], impact: 'breaking', ... },
 ]
 ```
 
@@ -593,9 +639,9 @@ const changes = NextUser.diff(PreviousUser);
 
 ### `contract.compile()`
 
-**Status:** stable
+**Status:** stable advanced
 
-**Purpose:** expose the compiled validator.
+**Purpose:** expose the cached compiled validator for performance-critical paths.
 
 **Signature:** `compile() => function`
 
@@ -607,6 +653,8 @@ const ok = validate(data);
 ```
 
 **Returns:** a compiled validator function.
+
+`contract.compile()` is a method on contract instances. The lower-level compiler in `src/core/compile.js` is internal and is not exported from the package root.
 
 **Throws:** never.
 
@@ -671,12 +719,13 @@ const CreateUser = httpContract({
     400: ErrorResponse,
   },
   params: sigil.exact({ id: String }),
-  headers: sigil.exact({ authorization: String *** });
+  headers: sigil.exact({ requestId: String }),
+});
 
 // Request
 const trusted = CreateUser.parseRequest({
   params: { id: 'user-1' },
-  headers: { authorization: *** <token>' },
+  headers: { requestId: 'req_123' },
   body: { name: 'Alex', email: 'alex@example.com', role: 'user' },
 });
 
@@ -727,10 +776,16 @@ try {
 
 Common properties:
 
-- `code`
-- `path`
-- `expected`
-- `actual`
-- `message`
+- `name: 'SigilValidationError'`
+- `code: 'SIGIL_VALIDATION_FAILED'`
+- `message: string`
+- `path: Array<string | number>`
+- `expected: string`
+- `actual: unknown`
+
+`error.toJSON()` returns `{ code, message, path, expected, actual }`.
 
 This page documents the current stable surface only.
+
+
+

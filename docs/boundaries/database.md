@@ -75,9 +75,9 @@ const patch = UserUpdate.parse(updatePayload);
 Use `diff()` to catch persistence shape changes before deploying:
 
 ```js
-const changes = OldUserRecord.diff(NewUserRecord);
+const changes = NewUserRecord.diff(OldUserRecord);
 const breaking = changes.filter((c) => c.impact === 'breaking');
-// breaking.length > 0 → migration may be needed
+// breaking.length > 0 → migration/compatibility review may be needed
 ```
 
 ---

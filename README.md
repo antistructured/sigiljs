@@ -20,6 +20,9 @@ or:
 bun add @weipertda/sigiljs
 ```
 
+SigilJS is written in JavaScript and ships TypeScript declarations for public API consumption.
+The declarations are intentionally conservative: they describe the runtime API, but do not yet infer precise object shapes from every contract definition. For typed usage, pass an explicit generic such as `sigil.exact<User>(...)`; see [`docs/typescript.md`](docs/typescript.md).
+
 ---
 
 ## 30-second example
@@ -67,6 +70,7 @@ SigilJS provides one contract object per shape that you can:
 - project into JSON Schema, TypeScript, OpenAPI, or form metadata
 - use to generate test fixtures and run self-tests
 - compare across versions with structural diffs
+- consume from TypeScript projects without missing declaration errors
 
 A sigil is not a schema. It is a contract object that lives in your JavaScript and travels with your data.
 
@@ -148,7 +152,9 @@ More boundary recipes: [`docs/recipes/`](docs/recipes/index.md)
 
 ```js
 // Define
-import { sigil, sigil.exact, optional, oneOf, union, pipe, trim } from '@weipertda/sigiljs';
+import { sigil, optional, oneOf, union, pipe, trim } from '@weipertda/sigiljs';
+
+sigil.exact(definition)       // exact object contract
 
 // Enforce
 contract.parse(value)         // throws on invalid
@@ -212,7 +218,7 @@ NON-BREAKING
 
 ## CLI (experimental)
 
-SigilJS includes a dependency-free CLI for contract workflows. The CLI is **experimental** — commands may change before 1.0.0.
+SigilJS includes a dependency-free CLI for contract workflows. The CLI is **Bun-first and experimental** — commands, output shapes, exit-code guarantees, CWD/module-loading behavior, and `.sigil` compatibility may change before 1.0.0.
 
 ```bash
 sigil check contracts/user.sigil data/user.json
@@ -302,7 +308,7 @@ SigilJS does not claim to replace Zod. It is a focused alternative when you need
 
 ## Status
 
-Version `0.10.0`. Core API is stable. HTTP helpers, form constraints, and CLI are experimental.
+Version `0.18.0`. Core API is ready for broader public 0.x usage feedback, but this is not a 1.0.0 release. HTTP helpers, form constraints, and CLI are experimental.
 
 See [`docs/stability.md`](docs/stability.md) and [`docs/known-limitations.md`](docs/known-limitations.md).
 
@@ -311,3 +317,4 @@ See [`docs/stability.md`](docs/stability.md) and [`docs/known-limitations.md`](d
 ## License
 
 MIT
+

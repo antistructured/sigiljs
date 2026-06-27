@@ -7,7 +7,7 @@ SigilJS contracts are executable data contracts. They can validate runtime data 
 JSON Schema is the first serious projection.
 
 ```js
-import { oneOf, sigil } from 'sigil';
+import { oneOf, sigil } from '@weipertda/sigiljs';
 
 const User = sigil.exact({
   id: Number,
@@ -73,12 +73,12 @@ That keeps projection logic separate from parser internals:
 Sigil contract → describe() → JSON Schema
 ```
 
-This is the projection pattern future packages should follow:
+This is the projection pattern future packages could follow if package extraction is justified later:
 
 ```txt
-@sigil/json-schema
-@sigil/ts
-@sigil/openapi
+@sigil/json-schema  (does not exist yet)
+@sigil/ts           (does not exist yet)
+@sigil/openapi      (does not exist yet)
 ```
 
 For now, JSON Schema projection lives inside core until the public API stabilizes.

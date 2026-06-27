@@ -42,7 +42,7 @@ const validated = NewUser.parse(input);
 const patch = UserUpdate.parse(updatePayload);
 
 // Diff
-const changes = OldUserRecord.diff(NewUserRecord);
+const changes = NewUserRecord.diff(OldUserRecord);
 
 // Fixtures
 const fixture = UserRecord.mock({ seed: 1 });
