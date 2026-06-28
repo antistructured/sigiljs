@@ -1,8 +1,27 @@
 {
   "name": "@weipertda/sigiljs",
-  "version": "0.3.1",
+  "version": "0.18.0",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./cli": "./src/playground.js"
+  },
+  "publish": {
+    "include": [
+      "src/**/*.js",
+      "index.d.ts",
+      "README.md",
+      "LICENSE",
+      "CHANGELOG.md",
+      "docs/**/*.md",
+      "examples/**/*.js"
+    ],
+    "exclude": [
+      "docs/internal/**",
+      "trials/**",
+      "tests/**",
+      ".tmp/**",
+      "node_modules/**"
+    ]
   }
 }
