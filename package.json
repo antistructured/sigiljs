@@ -80,5 +80,8 @@
     "globals": "^17.7.0",
     "typescript": "^6.0.3",
     "zod": "^4.4.3"
+  },
+  "dependencies": {
+    "@weipertda/sigiljs": "^0.18.0"
   }
 }
