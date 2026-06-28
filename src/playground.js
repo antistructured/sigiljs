@@ -313,7 +313,7 @@ async function readSigil(path, options = {}) {
   try {
     return compileSigil(source);
   } catch (error) {
-    throw new Error(`Invalid Sigil contract in ${path}: ${error.message}`);
+    throw new Error(`Invalid Sigil contract in ${path}: ${error.message}`, { cause: error });
   }
 }
 
@@ -329,9 +329,9 @@ async function readSigilModule(path, options = {}) {
     mod = await import(resolved);
   } catch (error) {
     if (isMissingFileError(error) || error?.message?.includes('Cannot find module')) {
-      throw new Error(`Contract file not found: ${path}`);
+      throw new Error(`Contract file not found: ${path}`, { cause: error });
     }
-    throw new Error(`Failed to load contract module ${path}: ${error.message}`);
+    throw new Error(`Failed to load contract module ${path}: ${error.message}`, { cause: error });
   }
 
   const exportName = options.exportName;
@@ -379,7 +379,7 @@ async function readJSON(path) {
   try {
     return JSON.parse(source);
   } catch (error) {
-    throw new Error(`Invalid JSON data in ${path}: ${error.message}`);
+    throw new Error(`Invalid JSON data in ${path}: ${error.message}`, { cause: error });
   }
 }
 
@@ -388,10 +388,11 @@ async function readTextFile(path, label) {
     return await file(path).text();
   } catch (error) {
     if (isMissingFileError(error)) {
-      throw new Error(`${label} file not found: ${path}`);
+      throw new Error(`${label} file not found: ${path}`, { cause: error });
     }
     throw new Error(
       `Unable to read ${label.toLowerCase()} file ${path}: ${error.message}`,
+      { cause: error },
     );
   }
 }

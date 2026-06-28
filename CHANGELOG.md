@@ -6,12 +6,12 @@ This format follows [semantic-release](https://semantic-release.gitbook.io/) con
 
 ## 0.18.0
 
-### Added
+### Added in v0.18.0
 
 - Public `0.x` release notes for the `0.18.0` release line.
 - Public release prep reports covering carry-forward reconciliation, release scope, package metadata, README/docs polish, quickstart review, package contents, limitations, and release gates.
 
-### Changed
+### Changed in v0.18.0
 
 - Prepared package metadata for a serious public `0.x` release while keeping the package name `@weipertda/sigiljs`.
 - Updated active public version labels to `0.18.0`.
@@ -31,14 +31,14 @@ This format follows [semantic-release](https://semantic-release.gitbook.io/) con
 
 ## 0.4.0
 
-### Added
+### Added in v0.4.0
 
 - Public API stability classification for all exported symbols.
 - `docs/internal/public-export-audit.md` enumerating every public and internal export.
 - `docs/internal/projection-api-freeze.md` documenting projection input/output contracts, determinism, and error behavior.
 - `docs/experimental.md` index of experimental APIs.
 
-### Changed
+### Changed in v0.4.0
 
 - `docs/api.md` now includes a stable vs. experimental status table for exports, contract methods, utilities, and error types.
 - `docs/sigils.md` restructured to present `sigil()` as the primary API, `Sigil`\\`...\\` as the template alternative, and `S`/`T` as legacy aliases.
@@ -48,7 +48,7 @@ This format follows [semantic-release](https://semantic-release.gitbook.io/) con
 - `docs/projections/http.md` marked experimental with an explicit stability warning.
 - `docs/api.md` marks `httpContract` and `toFormConstraints()` as **Experimental. May change before 1.0.0.**
 
-### Notes
+### Notes in v0.4.0
 
 - Package name remains `@weipertda/sigiljs`. No package split.
 - `mock()` and `cases()` are stable in 0.4.0 because their tests and docs are strong. Additional testing helpers remain future `@sigil/testing` scope.
@@ -57,7 +57,7 @@ This format follows [semantic-release](https://semantic-release.gitbook.io/) con
 
 ## 0.5.0
 
-### Added
+### Added in v0.5.0
 
 - Deterministic value generator (`src/testing/generate.js`) for valid samples.
 - Expanded invalid case generation covering missing properties, wrong primitive types, invalid literals, invalid unions, invalid array items, exact-object extra keys, and nested failures.
@@ -72,7 +72,7 @@ This format follows [semantic-release](https://semantic-release.gitbook.io/) con
 - `cases()` invalid entries now use `{ label, value, expectedPath? }` shape consistently.
 - `docs/projections/testing.md` updated for stabilized testing surface and updated examples.
 
-### Notes
+### Notes in v0.5.0
 
 - Release theme: **Contract testing and fixture generation**.
 - This is a meaningful category expansion, not just documentation hardening.

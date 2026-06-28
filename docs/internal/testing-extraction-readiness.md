@@ -40,7 +40,7 @@ All testing APIs currently exposed outside `src/` are classified stable. No expe
 
 Current testing flow:
 
-```
+```js
 contract
   → describe()
     → projectMock() / projectCases()
