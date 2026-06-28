@@ -33,7 +33,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      
+
       - name: Verify npm and JSR versions match
         run: |
           PACKAGE_VERSION="$(node -p "require('./package.json').version")"
@@ -45,7 +45,7 @@ jobs:
           fi
 
           echo "Versions match: $PACKAGE_VERSION"
-      
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -68,6 +68,9 @@ jobs:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
+
+      - name: Upgrade npm
+        run: npm install -g npm@latest
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -104,38 +107,12 @@ jobs:
             echo "$NAME@$VERSION does not exist on npm. Publishing is allowed."
           fi
 
-      - name: Upgrade npm
-        run: npm install -g npm@latest
-
       - name: Publish to npm
         if: steps.npm_version.outputs.exists == 'false'
         run: npm publish --access public
 
   publish-jsr:
     name: Publish to JSR
-    runs-on: ubuntu-latest
-    needs:
-      - verify
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-          package-manager-cache: false
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      name: Publish to JSR
     runs-on: ubuntu-latest
     needs:
       - verify
@@ -170,22 +147,5 @@ jobs:
 
           echo "JSR package: $NAME@$VERSION"
 
-      - name: Check whether JSR version already exists
-        id: jsr_version
-        shell: bash
-        run: |
-          NAME="${{ steps.jsr.outputs.name }}"
-          VERSION="${{ steps.jsr.outputs.version }}"
-
-          if npm view "jsr:$NAME@$VERSION" version > /dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "$NAME@$VERSION already exists on JSR. Skipping JSR publish."
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "$NAME@$VERSION does not exist on JSR. Publishing is allowed."
-          fi
-
       - name: Publish to JSR
-        if: steps.jsr_version.outputs.exists == 'false'
         run: npx jsr publish
-      
