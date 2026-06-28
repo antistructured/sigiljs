@@ -3,25 +3,25 @@
   "version": "0.18.0",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.js",
-    "./cli": "./src/playground.js"
+    ".": "./src/index.js"
   },
   "publish": {
     "include": [
-      "src/**/*.js",
-      "index.d.ts",
-      "README.md",
-      "LICENSE",
       "CHANGELOG.md",
       "docs/**/*.md",
-      "examples/**/*.js"
+      "examples/**/*.js",
+      "index.d.ts",
+      "LICENSE",
+      "README.md",
+      "src/**/*.js"
     ],
     "exclude": [
-      "docs/internal/**",
-      "trials/**",
-      "tests/**",
       ".tmp/**",
-      "node_modules/**"
+      "docs/internal/**",
+      "node_modules/**",
+      "src/playground.js",
+      "tests/**",
+      "trials/**"
     ]
   }
 }
