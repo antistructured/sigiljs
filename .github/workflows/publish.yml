@@ -34,6 +34,18 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Verify npm and JSR versions match
+        run: |
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          JSR_VERSION="$(node -e "console.log(JSON.parse(require('fs').readFileSync('jsr.json', 'utf8')).version)")"
+
+          if [ "$PACKAGE_VERSION" != "$JSR_VERSION" ]; then
+            echo "package.json version ($PACKAGE_VERSION) does not match jsr.json version ($JSR_VERSION)"
+            exit 1
+          fi
+
+          echo "Versions match: $PACKAGE_VERSION"
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -56,6 +68,9 @@ jobs:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
+
+      - name: Upgrade npm
+        run: npm install -g npm@latest
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -120,6 +135,17 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Read JSR package metadata
+        id: jsr
+        shell: bash
+        run: |
+          NAME="$(node -e "console.log(JSON.parse(require('fs').readFileSync('jsr.json', 'utf8')).name)")"
+          VERSION="$(node -e "console.log(JSON.parse(require('fs').readFileSync('jsr.json', 'utf8')).version)")"
+
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          echo "JSR package: $NAME@$VERSION"
+
       - name: Publish to JSR
         run: npx jsr publish
-      
